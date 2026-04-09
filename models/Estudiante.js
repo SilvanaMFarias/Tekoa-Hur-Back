@@ -2,10 +2,10 @@ const { Model, DataTypes } = require('sequelize');
 
 class Estudiante extends Model {
   static associate(models) {
-    Estudiante.belongsToMany(models.Seccion, {
+    Estudiante.belongsToMany(models.Comision, {
       through: models.Matricula,
       foreignKey: 'estudianteDni',
-      as: 'secciones'
+      as: 'comisiones' 
     });
   }
 }

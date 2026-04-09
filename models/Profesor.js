@@ -2,9 +2,9 @@ const { Model, DataTypes } = require('sequelize');
 
 class Profesor extends Model {
   static associate(models) {
-    Profesor.hasMany(models.Seccion, {// Un profesor puede tener a cargo muchas comisiones
+    Profesor.hasMany(models.Comision, {// Un profesor puede tener a cargo muchas comisiones
       foreignKey: 'professorId', 
-      as: 'sections' 
+      as: 'comisiones' 
     });
   }
 }

@@ -1,23 +1,40 @@
 const { Model, DataTypes } = require('sequelize');
 
-class Classroom extends Model {
+class Aula extends Model {
   static associate(models) {
-    Classroom.belongsTo(models.Building, { foreignKey: 'buildingId', as: 'building' });
-    Classroom.hasMany(models.Schedule, { foreignKey: 'classroomId', as: 'schedules' });
+    // Relación con Edificio
+    Aula.belongsTo(models.Edificio, { foreignKey: 'edificioId', as: 'edificio' });
+    // Relación con Horarios o Comisiones
+    Aula.hasMany(models.Horario, { foreignKey: 'aulaId', as: 'horarios' });
   }
 }
 
 module.exports = (sequelize) => {
-  Classroom.init({
+  Aula.init({
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-    name: { type: DataTypes.STRING, allowNull: false }, // Ej: "JS-004"
-    coordinates: { type: DataTypes.JSONB, allowNull: true }, // Ideal en PostgreSQL para mapeo en el frontend
-    buildingId: { type: DataTypes.UUID, allowNull: false }
+    sector: { 
+      type: DataTypes.STRING, 
+      allowNull: false // Ej: "JS"
+    },
+    numero: { 
+      type: DataTypes.STRING, 
+      allowNull: false // Ej: "004"
+    },
+    nombreCompleto: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        return `${this.sector}-${this.numero}`;
+      }
+    },
+    edificioId: {
+      type: DataTypes.UUID,
+      allowNull: false
+    }
   }, {
     sequelize,
-    modelName: 'Classroom',
-    tableName: 'classrooms',
+    modelName: 'Aula',
+    tableName: 'aulas',
     timestamps: false
   });
-  return Classroom;
+  return Aula;
 };
