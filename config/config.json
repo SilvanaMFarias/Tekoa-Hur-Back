@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "postgres123",
+    "database": "tekoadb",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  }
+}
