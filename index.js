@@ -11,7 +11,7 @@ app.use('/api/estudiantes', estudianteRoutes);
 app.use(express.json());
 
 // ============================================
-// DOCUMENTACIÓN SWAGGER - AGREGAR ESTAS LÍNEAS
+// DOCUMENTACIÓN SWAGGER
 // ============================================
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 console.log('📄 Documentación Swagger disponible en http://localhost:3001/api-docs');
