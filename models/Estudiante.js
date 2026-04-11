@@ -13,7 +13,7 @@ class Estudiante extends Model {
 module.exports = (sequelize) => {
   Estudiante.init({
     dni: { type: DataTypes.STRING, primaryKey: true, allowNull: false },
-    fullName: { type: DataTypes.STRING, allowNull: false },
+    nombre_apellido: { type: DataTypes.STRING, allowNull: false },
   }, {
     sequelize,
     modelName: 'Estudiante',

@@ -9,8 +9,16 @@ class Edificio extends Model {
 
 module.exports = (sequelize) => {
   Edificio.init({
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-    nombre: { type: DataTypes.STRING, allowNull: false, unique: true } // Ej: "JUSTICIA SOCIAL"
+    edificioId: { 
+      type: DataTypes.UUID, 
+      defaultValue: DataTypes.UUIDV4, 
+      primaryKey: true 
+    },
+    nombre: { 
+      type: DataTypes.STRING, 
+      allowNull: false, 
+      unique: true 
+    } // Ej: "JUSTICIA SOCIAL"
   }, {
     sequelize,
     modelName: 'Edificio',

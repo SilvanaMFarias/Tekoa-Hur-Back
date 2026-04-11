@@ -3,7 +3,7 @@ const { Model, DataTypes } = require('sequelize');
 class Profesor extends Model {
   static associate(models) {
     Profesor.hasMany(models.Comision, {// Un profesor puede tener a cargo muchas comisiones
-      foreignKey: 'professorId', 
+      foreignKey: 'profesorId', 
       as: 'comisiones' 
     });
   }
@@ -11,12 +11,17 @@ class Profesor extends Model {
 
 module.exports = (sequelize) => {
   Profesor.init({
-    id: { 
+    profesorId: { 
       type: DataTypes.UUID, 
       defaultValue: DataTypes.UUIDV4, 
       primaryKey: true 
     },
-    fullName: { 
+    dni: { 
+      type: DataTypes.STRING, 
+      primaryKey: true, 
+      allowNull: false 
+    },
+    nombre_apellido: { 
       type: DataTypes.STRING, 
       allowNull: false,
       unique: true 

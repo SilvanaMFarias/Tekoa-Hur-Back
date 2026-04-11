@@ -11,7 +11,7 @@ class Horario extends Model {
 
 module.exports = (sequelize) => {
   Horario.init({
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    horarioId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     diaSemana: { 
       type: DataTypes.STRING, 
       allowNull: false // Ej: "Lunes", "Martes"

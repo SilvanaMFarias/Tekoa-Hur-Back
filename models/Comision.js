@@ -2,8 +2,8 @@ const { Model, DataTypes } = require('sequelize');
 
 class Comision extends Model {
   static associate(models) {
-  Comision.belongsTo(models.Materia, { foreignKey: 'subjectId', as: 'materia' });
-  Comision.belongsTo(models.Profesor, { foreignKey: 'professorId', as: 'profesor' });
+  Comision.belongsTo(models.Materia, { foreignKey: 'materiaId', as: 'materia' });
+  Comision.belongsTo(models.Profesor, { foreignKey: 'profesorId', as: 'profesor' });
   Comision.hasMany(models.Horario, { foreignKey: 'comisionId', as: 'horarios' });
   Comision.belongsToMany(models.Estudiante, {
     through: models.Matricula,
@@ -15,10 +15,10 @@ class Comision extends Model {
 
 module.exports = (sequelize) => {
   Comision.init({
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
-    code: { type: DataTypes.STRING, allowNull: false }, // Ej: "COMISIÓN_001-TM"
-    subjectId: { type: DataTypes.UUID, allowNull: false },
-    professorId: { type: DataTypes.UUID, allowNull: false }
+    comisionId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    cod_comision: { type: DataTypes.STRING, allowNull: false }, // Ej: "COMISIÓN_001-TM"
+    materiaId: { type: DataTypes.UUID, allowNull: false },
+    profesorId: { type: DataTypes.UUID, allowNull: false }
   }, {
     sequelize,
     modelName: 'Comision',

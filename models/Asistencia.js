@@ -9,7 +9,7 @@ class Asistencia extends Model {
 
 module.exports = (sequelize) => {
   Asistencia.init({
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    asistenciaId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     fecha: { 
       type: DataTypes.DATEONLY, 
       allowNull: false,

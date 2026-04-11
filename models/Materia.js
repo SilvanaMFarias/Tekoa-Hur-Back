@@ -12,7 +12,7 @@ class Materia extends Model {
 
 module.exports = (sequelize) => {
   Materia.init({
-    id: { 
+    materiaId: { 
       type: DataTypes.UUID, 
       defaultValue: DataTypes.UUIDV4, 
       primaryKey: true 

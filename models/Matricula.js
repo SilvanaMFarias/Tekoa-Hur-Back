@@ -4,7 +4,7 @@ class Matricula extends Model {}
 
 module.exports = (sequelize) => {
   Matricula.init({
-    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    matriculaId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     // Usamos el DNI como referencia al Estudiante
     estudianteDni: { 
       type: DataTypes.STRING, 
