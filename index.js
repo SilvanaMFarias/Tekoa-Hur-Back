@@ -1,20 +1,18 @@
 const express = require('express')
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./swagger');
+const { swaggerUi, swaggerSpec } = require("./swagger");
 
 const app = express()
 const port = 3001
+app.use(express.json());
 
 // Tus middlewares existentes
-const estudianteRoutes = require('./routes/estudiantes');
-app.use('/api/estudiantes', estudianteRoutes);
-app.use(express.json());
+//const estudianteRoutes = require('./routes/estudiantes');
+//app.use('/api/estudiantes', estudianteRoutes);
 
 // ============================================
 // DOCUMENTACIÓN SWAGGER
 // ============================================
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-console.log('📄 Documentación Swagger disponible en http://localhost:3001/api-docs');
 // ============================================
 
 // Tus rutas existentes (ejemplo)
@@ -24,14 +22,15 @@ console.log('📄 Documentación Swagger disponible en http://localhost:3001/api
 // Iniciar servidor
 app.listen(port, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
+    console.log(`📄 Documentación Swagger disponible en http://localhost:${port}/api-docs`);
 });
 
-
+/*
 app.get('/', (req, res) => {
   res.send('App iniciada')
 })
 
-/*
+
 app.listen(port, () => {
   console.log(`App listening on port ${port}`)
 })

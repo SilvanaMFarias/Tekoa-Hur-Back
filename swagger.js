@@ -1,4 +1,5 @@
-const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
 const options = {
     definition: {
@@ -6,7 +7,7 @@ const options = {
         info: {
             title: 'API - Tekoa Hur Back',
             version: '1.0.0',
-            description: 'Documentación de la API del sistema académico Tekoa Hur',
+            description: 'Documentación de la API del sistema académico Tekoa-Hur',
             contact: {
                 name: 'Soporte',
                 email: 'soporte@tekoahur.com'
@@ -24,4 +25,4 @@ const options = {
 };
 
 const swaggerSpec = swaggerJsdoc(options);
-module.exports = swaggerSpec;
+module.exports = { swaggerUi, swaggerSpec };
