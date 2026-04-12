@@ -1,7 +1,7 @@
 {
   "name": "tekoa-hur-back",
   "version": "1.0.0",
-  "description": "",
+  "description": "```bash\r node index.js\r ```\r Abre tu navegador en: http://localhost:3001/api-docs\r Se vera una interfaz interactiva con:\r - Los endpoints como GET y POST\r - La posibilidad de probarlos directamente desde la web",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -21,6 +21,22 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "sequelize-cli": "^6.6.5"
-  }
+    "sequelize-cli": "^6.6.5",
+      "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SilvanaMFarias/Tekoa-Hur-Back.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SilvanaMFarias/Tekoa-Hur-Back/issues"
+  },
+  "homepage": "https://github.com/SilvanaMFarias/Tekoa-Hur-Back#readme"
+
 }
