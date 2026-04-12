@@ -15,12 +15,12 @@ app.use(express.json());
 app.use("/api/estudiantes", require("./routes/estudiantes"));
 app.use("/api/edificios", require("./routes/edificios"));
 app.use("/api/aulas", require("./routes/aulas"));
-//app.use("/api/materias", require("./routes/materias"));
-//app.use("/api/profesores", require("./routes/profesores"));
-//app.use("/api/comisiones", require("./routes/comisiones"));
-//app.use("/api/matriculas", require("./routes/matriculas"));
-//app.use("/api/horarios", require("./routes/horarios"));
-//app.use("/api/asistencias", require("./routes/asistencias"));
+app.use("/api/materias", require("./routes/materias"));
+app.use("/api/profesores", require("./routes/profesores"));
+app.use("/api/comisiones", require("./routes/comisiones"));
+app.use("/api/matriculas", require("./routes/matriculas"));
+app.use("/api/horarios", require("./routes/horarios"));
+app.use("/api/asistencias", require("./routes/asistencias"));
 
 // ===============================
 // DOCUMENTACIÓN SWAGGER
