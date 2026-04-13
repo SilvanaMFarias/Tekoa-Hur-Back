@@ -14,6 +14,14 @@ Incluye gestión de estudiantes, materias, profesores y asistencia, con document
 
 ---
 
+### Permitir que el front(Next.js) haga requests
+### Instalar cors
+```bash
+npm install cors
+```
+
+---
+
 ### Creación e intalacion de la base de datos:
 Recordar tener `Postgres` instalado antes.
 ### - Instalar dependencias para sequelize

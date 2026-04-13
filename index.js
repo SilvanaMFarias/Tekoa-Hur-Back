@@ -1,4 +1,7 @@
 require("dotenv").config();
+
+const cors = require("cors");
+
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
@@ -9,6 +12,12 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(express.static("public"));
+
+// habilitar CORS para el front
+app.use(cors({
+  origin: "http://localhost:3000", // dirección de tu front
+  credentials: true
+}));
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
