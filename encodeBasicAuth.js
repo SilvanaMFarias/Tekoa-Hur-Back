@@ -1,17 +1,27 @@
 // encodeBasicAuth.js
 // Script para generar el header Authorization con Basic Auth
 
-function generarHeaderBasicAuth(usuario, clave) {
-  const cadena = `${usuario}:${clave}`;
-  const base64 = Buffer.from(cadena).toString("base64");
-  return `Authorization: Basic ${base64}`;
+const fs = require("fs");
+
+// Leer usuarios desde users.json
+const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+
+// Función para generar header
+function generateAuthHeader(username) {
+  const password = users[username];
+  if (!password) {
+    console.error("Usuario no encontrado en users.json");
+    return;
+  }
+  const token = Buffer.from(`${username}:${password}`).toString("base64");
+  console.log(`Authorization: Basic ${token}`);
 }
 
-// Ejemplo de uso
-const usuario = "yamil";        // Cambiá por el usuario que quieras
-const clave = "3026"; // Cambiá por la clave que quieras
+// Ejemplo: pasar el usuario por argumento
+const username = process.argv[2];
+if (!username) {
+  console.error("Uso: node encodeBasicAuth.js <usuario>");
+  process.exit(1);
+}
 
-const header = generarHeaderBasicAuth(usuario, clave);
-console.log("Header generado:");
-console.log(header);
-
+generateAuthHeader(username);

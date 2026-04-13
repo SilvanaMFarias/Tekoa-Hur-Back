@@ -1,0 +1,10 @@
+## Estructura del archivo para el manejo de usuarios habilitados en swagger.
+## Renombrar este archivo como users.json y eliminar todos los comentarios.
+## Cargar la cantidad de usuarios que se necesitens
+/*
+{
+  "usuario1": "clave",
+  "usuario2": "clave",
+  "usuario3": "clave"
+}
+*/

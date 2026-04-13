@@ -102,9 +102,13 @@ app.get("/login", (req, res) => {
 });
 
 // Procesar login
+const fs = require("fs");
+const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if (username === process.env.BASIC_USER && password === process.env.BASIC_PASS) {
+
+  if (users[username] && users[username] === password) {
     req.session.authenticated = true;
     res.redirect("/api-docs");
   } else {
