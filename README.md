@@ -15,7 +15,7 @@ Incluye gestión de estudiantes, materias, profesores y asistencia, con document
 ---
 
 ### Creación e intalacion de la base de datos:
-Recordar tener postgresSql instlado antes.
+Recordar tener `Postgres` instalado antes.
 ### - Instalar dependencias para sequelize
 ```bash
 npm install sequelize pg pg-hstore
@@ -50,16 +50,14 @@ npx sequelize-cli db:seed:all
 ```bash
 npm install swagger-jsdoc swagger-ui-express
 ```
-
 ---
-
-# Autentificación básica
-# Instalar libreris para que funcione autentificación básica
+### Autentificación básica
+### Instalar libreris para que funcione autentificación básica
 ```bash
 npm install express-basic-auth
 ```
 
-# Instalacion dependencias. Pantalla logueo swagger.
+### Instalacion dependencias. Pantalla logueo swagger.
 Por necesidad de manejar sesiones y formularios.
 ```bash
 npm install express-session body-parser
@@ -67,9 +65,10 @@ npm install express-session body-parser
 
 ---
 ---
-# Opcional
-En caso de habilitar seguridad en los endpoint hay que pasar como encabezado la clave en base64, para esto correr el siguiente script para generar por consola en la raíz del proyecto. (controlar que el archivo se encuentre en la raíz. encodeBasicAuth.js).
-- El usuario debe estar cargado con su clave en el archvio: users.json (raíz del proyecto).
+
+### Opcional
+En caso de habilitar seguridad en los endpoint hay que pasar como encabezado la clave en base64, para esto correr el siguiente script para generar por consola en la raíz del proyecto. (controlar que el archivo se encuentre en la raíz. `encodeBasicAuth.js`).
+- El usuario debe estar cargado con su clave en el archvio: `users.json` (raíz del proyecto).
 ```bash
 node encodeBasicAuth.js nombre_usuarios
 ```
@@ -78,7 +77,7 @@ Generará algo similar a:
 Authorization: Basic eWFtaWw6bWlDbGF2ZVNlZ3VyYQ==
 ```
 ---
-# Luego se copia el header y se puede pegar en el postman o usar en curl
+### Luego se copia el header y se puede pegar en el postman o usar en curl
 ```bash
 curl -H "Authorization: Basic eWFtaWw6bWlDbGF2ZVNlZ3VyYQ==" http://localhost:3001/api/edificios
 ```
@@ -86,7 +85,7 @@ curl -H "Authorization: Basic eWFtaWw6bWlDbGF2ZVNlZ3VyYQ==" http://localhost:300
 ---
 ---
 
-## Probar swagger
+### Probar swagger
 ```bash
 node index.js
 ```
