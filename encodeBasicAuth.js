@@ -1,10 +1,17 @@
 // encodeBasicAuth.js
 // Script para generar el header Authorization con Basic Auth
 
-const fs = require("fs");
+//const fs = require("fs");
 
 // Leer usuarios desde users.json
-const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+//const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+
+//Para usar variables de entorno en dokploy o users.json local
+require("dotenv").config();
+const getUsers = require("./config/users");
+
+const users = getUsers();
+
 
 // Función para generar header
 function generateAuthHeader(username) {

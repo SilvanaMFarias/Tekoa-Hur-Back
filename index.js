@@ -111,8 +111,12 @@ app.get("/login", (req, res) => {
 });
 
 // Procesar login
-const fs = require("fs");
-const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+//const fs = require("fs");
+//const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+require("dotenv").config();
+const getUsers = require("./config/users");
+
+const users = getUsers();
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
