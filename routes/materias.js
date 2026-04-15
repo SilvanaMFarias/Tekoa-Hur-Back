@@ -40,6 +40,10 @@ router.get("/", async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *           forma: uuid
+ *     responses:
+ *       200:
+ *          description: Materia encontrada
  */
 router.get("/:id", async (req, res) => {
   try {
@@ -80,8 +84,18 @@ router.post("/", async (req, res) => {
  * @swagger
  * /api/materias/{id}:
  *   put:
- *     summary: Actualizar una materia
+ *     summary: Actualizar una materia por ID
  *     tags: [Materias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           forma: uuid
+ *     responses:
+ *       200:
+ *          description: Materia Actualizada
  */
 router.put("/:id", async (req, res) => {
   try {
@@ -99,6 +113,18 @@ router.put("/:id", async (req, res) => {
  *   delete:
  *     summary: Eliminar una materia
  *     tags: [Materias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Materia eliminada
+ *       404:
+ *         description: Materia no encontrada
  */
 router.delete("/:id", async (req, res) => {
   try {

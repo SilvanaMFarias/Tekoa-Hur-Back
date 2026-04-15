@@ -1,12 +1,21 @@
 require("dotenv").config();
+// Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
 
 const cors = require("cors");
-
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const sequelize = require("./config/database");
 const { swaggerUi, swaggerSpec } = require("./swagger");
+/*
+Express: framework principal del servidor.
+CORS: permite que el frontend (React) se comunique con el backend.
+Session: gestiona sesiones de usuario (para login y Swagger).
+Body-parser: interpreta datos enviados por formularios.
+Sequelize: conecta con la base de datos.
+Swagger: documenta la API.
+*/
+
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -28,6 +37,7 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
 }));
+// Crea una cookie de sesión para manejar autenticación tempora
 
 // Middleware para proteger /api-docs
 function checkAuth(req, res, next) {
