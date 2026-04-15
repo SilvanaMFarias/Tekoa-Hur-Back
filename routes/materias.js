@@ -93,9 +93,24 @@ router.post("/", async (req, res) => {
  *         schema:
  *           type: string
  *           forma: uuid
+ *         description: ID de la materia a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 example: Matemática
  *     responses:
  *       200:
- *          description: Materia Actualizada
+ *         description: Materia actualizada correctamente
+ *       404:
+ *         description: Materia no encontrada
+ *       500:
+ *         description: Error interno del servidor
  */
 router.put("/:id", async (req, res) => {
   try {
