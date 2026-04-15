@@ -1,4 +1,6 @@
 require("dotenv").config();
+const getUsers = require("./config/users");
+
 
 const cors = require("cors");
 
@@ -30,17 +32,38 @@ app.use(session({
 }));
 
 // Middleware para proteger /api-docs
-function checkAuth(req, res, next) {
+/*function checkAuth(req, res, next) {
   if (req.session && req.session.authenticated) {
     return next();
   } else {
-    //res.redirect("/login");
-    res.status(401).send("No autenticado");
+    res.redirect("/login");
+    }
+}*/
+function checkAuth(req, res, next) {
+  const auth = req.headers.authorization;
+
+  if (!auth) {
+    res.setHeader("WWW-Authenticate", 'Basic realm="Swagger"');
+    return res.status(401).send("Autenticación requerida");
   }
+
+  const base64 = auth.split(" ")[1];
+  const [user, pass] = Buffer.from(base64, "base64")
+    .toString()
+    .split(":");
+
+  const users = getUsers();
+
+  if (users[user] && users[user] === pass) {
+    return next();
+  }
+
+  return res.status(401).send("Credenciales inválidas");
 }
 
 // Ruta de login
-app.get("/login", (req, res) => {
+//Comento para usar solo Basic Auth
+/*app.get("/login", (req, res) => {
   res.send(`
     <html>
       <head>
@@ -111,14 +134,17 @@ app.get("/login", (req, res) => {
   `);
 });
 
+*/
+
 // Procesar login
 //const fs = require("fs");
 //const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
-require("dotenv").config();
-const getUsers = require("./config/users");
+//require("dotenv").config();
+//const getUsers = require("./config/users");
 
 const users = getUsers();
-
+//Comento para usar solo Basic Auth
+/*
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -129,6 +155,8 @@ app.post("/login", (req, res) => {
     res.send("Credenciales inválidas. <a href='/login'>Volver</a>");
   }
 });
+
+*/
 
 // Swagger protegido
 app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
