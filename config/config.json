@@ -1,8 +1,18 @@
+//{
+//  "development": {
+//    "username": "postgres",
+//    "password": "2850",
+//    "database": "tekoadb",
+//    "host": "dokploy-postgres",
+//    "dialect": "postgres"
+//  }
+//}
+
 {
   "development": {
-    "username": "postgres",
-    "password": "2850",
-    "database": "tekoadb",
+    "username": "dokploy",
+    "password": "G07Aw1y909Ve93TgWCzr1V8lX7jci7EA",
+    "database": "dokploy",
     "host": "dokploy-postgres",
     "dialect": "postgres"
   }
