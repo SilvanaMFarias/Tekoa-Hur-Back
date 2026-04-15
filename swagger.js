@@ -28,7 +28,7 @@ const options = {
     ],
     servers: [
       {
-        url: process.env.BASE_URL || "http://localhost:3001/api",
+        url: process.env.BASE_URL || "http://localhost:3001",
         description: 'Servidor de desarrollo'
       },
     ],
