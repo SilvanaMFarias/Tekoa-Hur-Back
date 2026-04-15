@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD sh -c "node sync.js && npx sequelize-cli db:seed:all && node index.js"
+CMD sh -c "node sync.js && node index.js"
