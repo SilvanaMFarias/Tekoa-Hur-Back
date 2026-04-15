@@ -33,6 +33,9 @@ app.use(session({
   saveUninitialized: true,
 }));
 
+//Agregado para QR
+app.use("/api/qr", require("./routes/qr"));
+
 // Middleware para proteger /api-docs
 /*function checkAuth(req, res, next) {
   if (req.session && req.session.authenticated) {
