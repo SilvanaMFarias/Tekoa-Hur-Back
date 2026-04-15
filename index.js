@@ -17,7 +17,8 @@ app.use(express.static("public"));
 
 // habilitar CORS para el front
 app.use(cors({
-  origin: "http://localhost:3000", // dirección de tu front
+  origin: [ "http://localhost:3000", // dirección de tu front
+          "http://tekoa.unahur.edu.ar"],
   credentials: true
 }));
 
