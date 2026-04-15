@@ -34,7 +34,8 @@ function checkAuth(req, res, next) {
   if (req.session && req.session.authenticated) {
     return next();
   } else {
-    res.redirect("/login");
+    //res.redirect("/login");
+    res.status(401).send("No autenticado");
   }
 }
 
