@@ -1,7 +1,7 @@
 {
   "development": {
     "username": "dokploy",
-    "password": "G07Aw1y909Ve93TgWCzr1V8lX7jci7EA",
+    "password": "GO7AwlY909Ve93TgWCzr1V8lX7jcI7EA",
     "database": "dokploy",
     "host": "dokploy-postgres",
     "dialect": "postgres"
