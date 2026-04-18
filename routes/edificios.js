@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Edificio } = require("../models"); // Importa desde index.js de models
+const { Edificio } = require("../models");
 
 /**
  * @swagger
@@ -15,16 +15,13 @@ const { Edificio } = require("../models"); // Importa desde index.js de models
  *   get:
  *     summary: Obtener todos los edificios
  *     tags: [Edificios]
- *     responses:
- *       200:
- *         description: Lista de edificios
  */
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const edificios = await Edificio.findAll();
     res.json(edificios);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -34,20 +31,20 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Obtener un edificio por ID
  *     tags: [Edificios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const edificio = await Edificio.findByPk(req.params.id);
-    if (!edificio) return res.status(404).json({ message: "Edificio no encontrado" });
+
+    if (!edificio) {
+      const error = new Error("Edificio no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json(edificio);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -57,22 +54,22 @@ router.get("/:id", async (req, res) => {
  *   post:
  *     summary: Crear un edificio
  *     tags: [Edificios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nombre:
- *                 type: string
  */
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
+    const { nombre } = req.body;
+
+    // Validación básica
+    if (!nombre) {
+      const error = new Error("El nombre es obligatorio");
+      error.status = 400;
+      return next(error);
+    }
+
     const edificio = await Edificio.create(req.body);
     res.status(201).json(edificio);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -83,13 +80,21 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar un edificio
  *     tags: [Edificios]
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const [updated] = await Edificio.update(req.body, { where: { edificioId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Edificio no encontrado" });
+    const [updated] = await Edificio.update(req.body, {
+      where: { edificioId: req.params.id }
+    });
+
+    if (!updated) {
+      const error = new Error("Edificio no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Edificio actualizado" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -100,13 +105,21 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar un edificio
  *     tags: [Edificios]
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const deleted = await Edificio.destroy({ where: { edificioId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Edificio no encontrado" });
+    const deleted = await Edificio.destroy({
+      where: { edificioId: req.params.id }
+    });
+
+    if (!deleted) {
+      const error = new Error("Edificio no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Edificio eliminado" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

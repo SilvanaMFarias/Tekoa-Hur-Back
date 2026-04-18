@@ -1,6 +1,7 @@
 require("dotenv").config();
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
-
+const errorHandler = require("./middleware/errorhandlers");
+const notFound = require("./middleware/notFound");
 const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
@@ -154,6 +155,9 @@ app.get("/", (req, res) => {
   res.send("Servidor iniciado correctamente 🚀");
 });
 
+app.use(notFound);      
+app.use(errorHandler);
+
 sequelize.sync().then(() => {
   app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
@@ -162,3 +166,4 @@ sequelize.sync().then(() => {
 }).catch(err => {
   console.error("Error al conectar con la base de datos:", err);
 });
+

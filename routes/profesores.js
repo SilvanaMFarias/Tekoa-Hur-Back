@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Profesor } = require("../models"); // Importa desde models/index.js
+const { Profesor } = require("../models");
 
 /**
  * @swagger
@@ -15,16 +15,13 @@ const { Profesor } = require("../models"); // Importa desde models/index.js
  *   get:
  *     summary: Obtener todos los profesores
  *     tags: [Profesores]
- *     responses:
- *       200:
- *         description: Lista de profesores
  */
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const profesores = await Profesor.findAll();
     res.json(profesores);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -34,20 +31,20 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Obtener un profesor por ID
  *     tags: [Profesores]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const profesor = await Profesor.findByPk(req.params.id);
-    if (!profesor) return res.status(404).json({ message: "Profesor no encontrado" });
+
+    if (!profesor) {
+      const error = new Error("Profesor no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json(profesor);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -57,26 +54,22 @@ router.get("/:id", async (req, res) => {
  *   post:
  *     summary: Crear un profesor
  *     tags: [Profesores]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               dni:
- *                 type: string
- *               nombre_apellido:
- *                 type: string
- *               email:
- *                 type: string
  */
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
+    const { dni, nombre_apellido, email } = req.body;
+
+    // Validación básica
+    if (!dni || !nombre_apellido || !email) {
+      const error = new Error("Faltan datos obligatorios");
+      error.status = 400;
+      return next(error);
+    }
+
     const profesor = await Profesor.create(req.body);
     res.status(201).json(profesor);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -87,13 +80,21 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar un profesor
  *     tags: [Profesores]
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const [updated] = await Profesor.update(req.body, { where: { profesorId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Profesor no encontrado" });
+    const [updated] = await Profesor.update(req.body, {
+      where: { profesorId: req.params.id }
+    });
+
+    if (!updated) {
+      const error = new Error("Profesor no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Profesor actualizado" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -104,13 +105,21 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar un profesor
  *     tags: [Profesores]
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const deleted = await Profesor.destroy({ where: { profesorId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Profesor no encontrado" });
+    const deleted = await Profesor.destroy({
+      where: { profesorId: req.params.id }
+    });
+
+    if (!deleted) {
+      const error = new Error("Profesor no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Profesor eliminado" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

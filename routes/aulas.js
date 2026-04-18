@@ -15,11 +15,8 @@ const { Aula, Edificio } = require("../models");
  *   get:
  *     summary: Obtener todas las aulas
  *     tags: [Aulas]
- *     responses:
- *       200:
- *         description: Lista de aulas
  */
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const aulas = await Aula.findAll({
       include: {
@@ -28,7 +25,7 @@ router.get("/", async (req, res) => {
     });
     res.json(aulas);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -38,14 +35,8 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Obtener un aula por ID
  *     tags: [Aulas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const aula = await Aula.findByPk(req.params.id, {
       include: {
@@ -54,12 +45,14 @@ router.get("/:id", async (req, res) => {
     });
 
     if (!aula) {
-      return res.status(404).json({ message: "Aula no encontrada" });
+      const error = new Error("Aula no encontrada");
+      error.status = 404;
+      return next(error);
     }
 
     res.json(aula);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -70,18 +63,29 @@ router.get("/:id", async (req, res) => {
  *     summary: Crear un aula
  *     tags: [Aulas]
  */
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
+    const { edificioId } = req.body;
+
+    // Validar datos
+    if (!edificioId) {
+      const error = new Error("Falta edificioId");
+      error.status = 400;
+      return next(error);
+    }
+
     // Validar que el edificio exista
-    const edificio = await Edificio.findByPk(req.body.edificioId);
+    const edificio = await Edificio.findByPk(edificioId);
     if (!edificio) {
-      return res.status(400).json({ error: "Edificio inválido" });
+      const error = new Error("Edificio inválido");
+      error.status = 400;
+      return next(error);
     }
 
     const aula = await Aula.create(req.body);
     res.status(201).json(aula);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -92,13 +96,15 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar un aula
  *     tags: [Aulas]
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res, next) => {
   try {
     // Validar edificio si se envía
     if (req.body.edificioId) {
       const edificio = await Edificio.findByPk(req.body.edificioId);
       if (!edificio) {
-        return res.status(400).json({ error: "Edificio inválido" });
+        const error = new Error("Edificio inválido");
+        error.status = 400;
+        return next(error);
       }
     }
 
@@ -107,12 +113,14 @@ router.put("/:id", async (req, res) => {
     });
 
     if (!updated) {
-      return res.status(404).json({ message: "Aula no encontrada" });
+      const error = new Error("Aula no encontrada");
+      error.status = 404;
+      return next(error);
     }
 
     res.json({ message: "Aula actualizada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -123,19 +131,21 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar un aula
  *     tags: [Aulas]
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   try {
     const deleted = await Aula.destroy({
       where: { aulaId: req.params.id }
     });
 
     if (!deleted) {
-      return res.status(404).json({ message: "Aula no encontrada" });
+      const error = new Error("Aula no encontrada");
+      error.status = 404;
+      return next(error);
     }
 
     res.json({ message: "Aula eliminada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Comision } = require("../models"); // Importa desde models/index.js
+const { Comision } = require("../models");
 
 /**
  * @swagger
@@ -15,16 +15,13 @@ const { Comision } = require("../models"); // Importa desde models/index.js
  *   get:
  *     summary: Obtener todas las comisiones
  *     tags: [Comisiones]
- *     responses:
- *       200:
- *         description: Lista de comisiones
  */
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const comisiones = await Comision.findAll();
     res.json(comisiones);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -34,20 +31,20 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Obtener una comisión por ID
  *     tags: [Comisiones]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const comision = await Comision.findByPk(req.params.id);
-    if (!comision) return res.status(404).json({ message: "Comisión no encontrada" });
+
+    if (!comision) {
+      const error = new Error("Comisión no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json(comision);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -57,26 +54,22 @@ router.get("/:id", async (req, res) => {
  *   post:
  *     summary: Crear una comisión
  *     tags: [Comisiones]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               cod_comision:
- *                 type: string
- *               materiaId:
- *                 type: string
- *               profesorId:
- *                 type: string
  */
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
+    const { cod_comision, materiaId, profesorId } = req.body;
+
+    // Validación básica
+    if (!cod_comision || !materiaId || !profesorId) {
+      const error = new Error("Faltan datos obligatorios");
+      error.status = 400;
+      return next(error);
+    }
+
     const comision = await Comision.create(req.body);
     res.status(201).json(comision);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -87,13 +80,21 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar una comisión
  *     tags: [Comisiones]
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const [updated] = await Comision.update(req.body, { where: { comisionId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Comisión no encontrada" });
+    const [updated] = await Comision.update(req.body, {
+      where: { comisionId: req.params.id }
+    });
+
+    if (!updated) {
+      const error = new Error("Comisión no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Comisión actualizada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -104,13 +105,21 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar una comisión
  *     tags: [Comisiones]
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const deleted = await Comision.destroy({ where: { comisionId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Comisión no encontrada" });
+    const deleted = await Comision.destroy({
+      where: { comisionId: req.params.id }
+    });
+
+    if (!deleted) {
+      const error = new Error("Comisión no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Comisión eliminada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 

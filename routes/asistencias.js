@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Asistencia, Comision } = require("../models"); // Importa desde models/index.js
+const { Asistencia, Comision } = require("../models");
 
 /**
  * @swagger
@@ -15,18 +15,15 @@ const { Asistencia, Comision } = require("../models"); // Importa desde models/i
  *   get:
  *     summary: Obtener todas las asistencias
  *     tags: [Asistencias]
- *     responses:
- *       200:
- *         description: Lista de asistencias
  */
-router.get("/", async (req, res) => {
+router.get("/", async (req, res, next) => {
   try {
     const asistencias = await Asistencia.findAll({
       include: [{ model: Comision, as: "comision" }]
     });
     res.json(asistencias);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -36,22 +33,22 @@ router.get("/", async (req, res) => {
  *   get:
  *     summary: Obtener una asistencia por ID
  *     tags: [Asistencias]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const asistencia = await Asistencia.findByPk(req.params.id, {
       include: [{ model: Comision, as: "comision" }]
     });
-    if (!asistencia) return res.status(404).json({ message: "Asistencia no encontrada" });
+
+    if (!asistencia) {
+      const error = new Error("Asistencia no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json(asistencia);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -61,36 +58,29 @@ router.get("/:id", async (req, res) => {
  *   post:
  *     summary: Registrar una asistencia
  *     tags: [Asistencias]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               fecha:
- *                 type: string
- *                 format: date
- *               horaRegistro:
- *                 type: string
- *                 format: time
- *               tipoUsuario:
- *                 type: string
- *                 enum: [ESTUDIANTE, PROFESOR]
- *               usuarioId:
- *                 type: string
- *               estado:
- *                 type: string
- *                 enum: [PRESENTE, AUSENTE, TARDE, JUSTIFICADO]
- *               comisionId:
- *                 type: string
  */
-router.post("/", async (req, res) => {
+router.post("/", async (req, res, next) => {
   try {
+    const {
+      fecha,
+      horaRegistro,
+      tipoUsuario,
+      usuarioId,
+      estado,
+      comisionId
+    } = req.body;
+
+    // Validación básica
+    if (!fecha || !horaRegistro || !tipoUsuario || !usuarioId || !estado || !comisionId) {
+      const error = new Error("Faltan datos obligatorios");
+      error.status = 400;
+      return next(error);
+    }
+
     const asistencia = await Asistencia.create(req.body);
     res.status(201).json(asistencia);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -101,13 +91,21 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar una asistencia
  *     tags: [Asistencias]
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res, next) => {
   try {
-    const [updated] = await Asistencia.update(req.body, { where: { asistenciaId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Asistencia no encontrada" });
+    const [updated] = await Asistencia.update(req.body, {
+      where: { asistenciaId: req.params.id }
+    });
+
+    if (!updated) {
+      const error = new Error("Asistencia no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Asistencia actualizada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
@@ -118,13 +116,21 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar una asistencia
  *     tags: [Asistencias]
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res, next) => {
   try {
-    const deleted = await Asistencia.destroy({ where: { asistenciaId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Asistencia no encontrada" });
+    const deleted = await Asistencia.destroy({
+      where: { asistenciaId: req.params.id }
+    });
+
+    if (!deleted) {
+      const error = new Error("Asistencia no encontrada");
+      error.status = 404;
+      return next(error);
+    }
+
     res.json({ message: "Asistencia eliminada" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    next(err);
   }
 });
 
