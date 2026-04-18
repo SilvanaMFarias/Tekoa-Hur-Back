@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Comision } = require("../models"); // Importa desde models/index.js
+const comisionController = require("../controllers/comisionController");
 
 /**
  * @swagger
@@ -19,14 +19,7 @@ const { Comision } = require("../models"); // Importa desde models/index.js
  *       200:
  *         description: Lista de comisiones
  */
-router.get("/", async (req, res) => {
-  try {
-    const comisiones = await Comision.findAll();
-    res.json(comisiones);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/", comisionController.getAll);
 
 /**
  * @swagger
@@ -41,15 +34,7 @@ router.get("/", async (req, res) => {
  *         schema:
  *           type: string
  */
-router.get("/:id", async (req, res) => {
-  try {
-    const comision = await Comision.findByPk(req.params.id);
-    if (!comision) return res.status(404).json({ message: "Comisión no encontrada" });
-    res.json(comision);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/:id", comisionController.getById);
 
 /**
  * @swagger
@@ -71,14 +56,7 @@ router.get("/:id", async (req, res) => {
  *               profesorId:
  *                 type: string
  */
-router.post("/", async (req, res) => {
-  try {
-    const comision = await Comision.create(req.body);
-    res.status(201).json(comision);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", comisionController.create);
 
 /**
  * @swagger
@@ -87,15 +65,7 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar una comisión
  *     tags: [Comisiones]
  */
-router.put("/:id", async (req, res) => {
-  try {
-    const [updated] = await Comision.update(req.body, { where: { comisionId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Comisión no encontrada" });
-    res.json({ message: "Comisión actualizada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.put("/:id", comisionController.update);
 
 /**
  * @swagger
@@ -104,14 +74,6 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar una comisión
  *     tags: [Comisiones]
  */
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Comision.destroy({ where: { comisionId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Comisión no encontrada" });
-    res.json({ message: "Comisión eliminada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.delete("/:id", comisionController.delete);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Matricula } = require("../models"); // Importa desde models/index.js
+const matriculaController = require("../controllers/matriculaController");
 
 /**
  * @swagger
@@ -19,14 +19,7 @@ const { Matricula } = require("../models"); // Importa desde models/index.js
  *       200:
  *         description: Lista de matrículas
  */
-router.get("/", async (req, res) => {
-  try {
-    const matriculas = await Matricula.findAll();
-    res.json(matriculas);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/", matriculaController.getAll);
 
 /**
  * @swagger
@@ -41,15 +34,7 @@ router.get("/", async (req, res) => {
  *         schema:
  *           type: string
  */
-router.get("/:id", async (req, res) => {
-  try {
-    const matricula = await Matricula.findByPk(req.params.id);
-    if (!matricula) return res.status(404).json({ message: "Matrícula no encontrada" });
-    res.json(matricula);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/:id", matriculaController.getById);
 
 /**
  * @swagger
@@ -72,14 +57,7 @@ router.get("/:id", async (req, res) => {
  *                 type: string
  *                 format: date
  */
-router.post("/", async (req, res) => {
-  try {
-    const matricula = await Matricula.create(req.body);
-    res.status(201).json(matricula);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", matriculaController.create);
 
 /**
  * @swagger
@@ -88,15 +66,7 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar una matrícula
  *     tags: [Matriculas]
  */
-router.put("/:id", async (req, res) => {
-  try {
-    const [updated] = await Matricula.update(req.body, { where: { matriculaId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Matrícula no encontrada" });
-    res.json({ message: "Matrícula actualizada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.put("/:id", matriculaController.update);
 
 /**
  * @swagger
@@ -105,14 +75,6 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar una matrícula
  *     tags: [Matriculas]
  */
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Matricula.destroy({ where: { matriculaId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Matrícula no encontrada" });
-    res.json({ message: "Matrícula eliminada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.delete("/:id", matriculaController.delete);
 
 module.exports = router;

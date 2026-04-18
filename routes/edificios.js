@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Edificio } = require("../models"); // Importa desde index.js de models
+const edificioController = require("../controllers/edificioController");
 
 /**
  * @swagger
@@ -19,14 +19,7 @@ const { Edificio } = require("../models"); // Importa desde index.js de models
  *       200:
  *         description: Lista de edificios
  */
-router.get("/", async (req, res) => {
-  try {
-    const edificios = await Edificio.findAll();
-    res.json(edificios);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/", edificioController.getAll);
 
 /**
  * @swagger
@@ -41,15 +34,7 @@ router.get("/", async (req, res) => {
  *         schema:
  *           type: string
  */
-router.get("/:id", async (req, res) => {
-  try {
-    const edificio = await Edificio.findByPk(req.params.id);
-    if (!edificio) return res.status(404).json({ message: "Edificio no encontrado" });
-    res.json(edificio);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/:id", edificioController.getById);
 
 /**
  * @swagger
@@ -67,14 +52,7 @@ router.get("/:id", async (req, res) => {
  *               nombre:
  *                 type: string
  */
-router.post("/", async (req, res) => {
-  try {
-    const edificio = await Edificio.create(req.body);
-    res.status(201).json(edificio);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", edificioController.create);
 
 /**
  * @swagger
@@ -83,15 +61,7 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar un edificio
  *     tags: [Edificios]
  */
-router.put("/:id", async (req, res) => {
-  try {
-    const [updated] = await Edificio.update(req.body, { where: { edificioId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Edificio no encontrado" });
-    res.json({ message: "Edificio actualizado" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.put("/:id", edificioController.update);
 
 /**
  * @swagger
@@ -100,14 +70,9 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar un edificio
  *     tags: [Edificios]
  */
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Edificio.destroy({ where: { edificioId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Edificio no encontrado" });
-    res.json({ message: "Edificio eliminado" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.delete("/:id", edificioController.delete);
+
+// Ruta extra con lógica específica
+router.get("/nombre/:nombre", edificioController.getByNombre);
 
 module.exports = router;
