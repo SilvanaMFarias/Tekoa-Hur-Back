@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Materia } = require("../models");
 const materiaController = require("../controllers/materiaController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
@@ -18,7 +19,7 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *     summary: Obtener todas las materias
  *     tags: [Materias]
  */
-router.get("/", materiaController.getAll);
+router.get("/", asyncHandler(materiaController.getAll));
 
 /**
  * @swagger
@@ -27,7 +28,7 @@ router.get("/", materiaController.getAll);
  *     summary: Obtener una materia por ID
  *     tags: [Materias]
  */
-router.get("/:id", materiaController.getById);
+router.get("/:id", asyncHandler(materiaController.getById));
 
 /**
  * @swagger
@@ -48,7 +49,7 @@ router.post("/",
  *     summary: Actualizar una materia
  *     tags: [Materias]
  */
-router.put("/:id", materiaController.update);
+router.put("/:id", asyncHandler(materiaController.update));
 
 /**
  * @swagger
@@ -57,6 +58,6 @@ router.put("/:id", materiaController.update);
  *     summary: Eliminar una materia
  *     tags: [Materias]
  */
-router.delete("/:id", materiaController.delete);
+router.delete("/:id", asyncHandler(materiaController.delete));
 
 module.exports = router;

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Matricula, Estudiante, Comision } = require("../models");
 const matriculaController = require("../controllers/matriculaController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
 
@@ -19,7 +20,7 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *     summary: Obtener todas las matrículas
  *     tags: [Matriculas]
  */
-router.get("/", matriculaController.getAll);
+router.get("/", asyncHandler(matriculaController.getAll));
 
 /**
  * @swagger
@@ -28,7 +29,7 @@ router.get("/", matriculaController.getAll);
  *     summary: Obtener una matrícula por ID
  *     tags: [Matriculas]
  */
-router.get("/:id", matriculaController.getById);
+router.get("/:id", asyncHandler(matriculaController.getById));
 
 /**
  * @swagger
@@ -64,6 +65,6 @@ router.put("/:id",
  *     summary: Eliminar una matrícula
  *     tags: [Matriculas]
  */
-router.delete("/:id", matriculaController.delete);
+router.delete("/:id", asyncHandler(matriculaController.delete));
 
 module.exports = router;

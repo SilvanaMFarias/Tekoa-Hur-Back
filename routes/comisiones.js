@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Comision, Materia, Profesor } = require("../models");
 const comisionController = require("../controllers/comisionController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
 
@@ -19,7 +20,7 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *     summary: Obtener todas las comisiones
  *     tags: [Comisiones]
  */
-router.get("/", comisionController.getAll);
+router.get("/", asyncHandler(comisionController.getAll));
 
 /**
  * @swagger
@@ -28,7 +29,7 @@ router.get("/", comisionController.getAll);
  *     summary: Obtener una comisión por ID
  *     tags: [Comisiones]
  */
-router.get("/:id", comisionController.getById);
+router.get("/:id", asyncHandler(comisionController.getById));
 
 /**
  * @swagger
@@ -64,6 +65,6 @@ router.put("/:id",
  *     summary: Eliminar una comisión
  *     tags: [Comisiones]
  */
-router.delete("/:id", comisionController.delete);
+router.delete("/:id", asyncHandler(comisionController.delete));
 
 module.exports = router;

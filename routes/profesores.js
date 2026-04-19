@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Profesor } = require("../models");
 const profesorController = require("../controllers/profesorController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
@@ -18,7 +19,7 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *     summary: Obtener todos los profesores
  *     tags: [Profesores]
  */
-router.get("/", profesorController.getAll);
+router.get("/", asyncHandler(profesorController.getAll));
 
 /**
  * @swagger
@@ -27,7 +28,7 @@ router.get("/", profesorController.getAll);
  *     summary: Obtener un profesor por ID
  *     tags: [Profesores]
  */
-router.get("/:id", profesorController.getById);
+router.get("/:id", asyncHandler(profesorController.getById));
 
 /**
  * @swagger
@@ -48,7 +49,7 @@ router.post("/",
  *     summary: Actualizar un profesor
  *     tags: [Profesores]
  */
-router.put("/:id", profesorController.update);
+router.put("/:id", asyncHandler(profesorController.update));
 
 /**
  * @swagger
@@ -57,6 +58,6 @@ router.put("/:id", profesorController.update);
  *     summary: Eliminar un profesor
  *     tags: [Profesores]
  */
-router.delete("/:id", profesorController.delete);
+router.delete("/:id", asyncHandler(profesorController.delete));
 
 module.exports = router;

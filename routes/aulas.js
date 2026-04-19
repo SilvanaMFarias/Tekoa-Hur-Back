@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const aulaController = require("../controllers/aulaController");
+const asyncHandler = require("../middleware/asyncHandler");
 const { Aula, Edificio } = require("../models");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
@@ -19,7 +20,7 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *     summary: Obtener todas las aulas
  *     tags: [Aulas]
  */
-router.get("/", aulaController.getAll);
+router.get("/", asyncHandler(aulaController.getAll));
 
 /**
  * @swagger
@@ -28,7 +29,7 @@ router.get("/", aulaController.getAll);
  *     summary: Obtener un aula por ID
  *     tags: [Aulas]
  */
-router.get("/:id", aulaController.getById);
+router.get("/:id", asyncHandler(aulaController.getById));
 
 /**
  * @swagger
@@ -62,6 +63,6 @@ router.put("/:id",
  *     summary: Eliminar un aula
  *     tags: [Aulas]
  */
-router.delete("/:id", aulaController.delete);
+router.delete("/:id", asyncHandler(aulaController.delete));
 
 module.exports = router;

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Asistencia, Comision, Estudiante } = require("../models");
 const asistenciaController = require("../controllers/asistenciaController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
 
@@ -19,7 +20,7 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *     summary: Obtener todas las asistencias
  *     tags: [Asistencias]
  */
-router.get("/", asistenciaController.getAll);
+router.get("/", asyncHandler(asistenciaController.getAll));
 
 /**
  * @swagger
@@ -28,7 +29,7 @@ router.get("/", asistenciaController.getAll);
  *     summary: Obtener una asistencia por ID
  *     tags: [Asistencias]
  */
-router.get("/:id", asistenciaController.getById);
+router.get("/:id", asyncHandler(asistenciaController.getById));
 
 /**
  * @swagger
@@ -64,6 +65,6 @@ router.put("/:id",
  *     summary: Eliminar una asistencia
  *     tags: [Asistencias]
  */
-router.delete("/:id", asistenciaController.delete);
+router.delete("/:id", asyncHandler(asistenciaController.delete));
 
 module.exports = router;

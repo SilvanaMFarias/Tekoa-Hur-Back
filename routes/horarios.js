@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Horario, Comision, Aula } = require("../models");
 const horarioController = require("../controllers/horarioController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
 
@@ -19,7 +20,7 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *     summary: Obtener todos los horarios
  *     tags: [Horarios]
  */
-router.get("/", horarioController.getAll);
+router.get("/", asyncHandler(horarioController.getAll));
 
 /**
  * @swagger
@@ -28,7 +29,7 @@ router.get("/", horarioController.getAll);
  *     summary: Obtener un horario por ID
  *     tags: [Horarios]
  */
-router.get("/:id", horarioController.getById);
+router.get("/:id", asyncHandler(horarioController.getById));
 
 /**
  * @swagger
@@ -64,6 +65,6 @@ router.put("/:id",
  *     summary: Eliminar un horario
  *     tags: [Horarios]
  */
-router.delete("/:id", horarioController.delete);
+router.delete("/:id", asyncHandler(horarioController.delete));
 
 module.exports = router;

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Edificio } = require("../models");
 const edificioController = require("../controllers/edificioController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
@@ -18,7 +19,7 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *     summary: Obtener todos los edificios
  *     tags: [Edificios]
  */
-router.get("/", edificioController.getAll);
+router.get("/", asyncHandler(edificioController.getAll));
 
 /**
  * @swagger
@@ -27,7 +28,7 @@ router.get("/", edificioController.getAll);
  *     summary: Obtener un edificio por ID
  *     tags: [Edificios]
  */
-router.get("/:id", edificioController.getById);
+router.get("/:id", asyncHandler(edificioController.getById));
 
 /**
  * @swagger
@@ -48,7 +49,7 @@ router.post("/",
  *     summary: Actualizar un edificio
  *     tags: [Edificios]
  */
-router.put("/:id", edificioController.update);
+router.put("/:id", asyncHandler(edificioController.update));
 
 /**
  * @swagger
@@ -57,6 +58,6 @@ router.put("/:id", edificioController.update);
  *     summary: Eliminar un edificio
  *     tags: [Edificios]
  */
-router.delete("/:id", edificioController.delete);
+router.delete("/:id", asyncHandler(edificioController.delete));
 
 module.exports = router;

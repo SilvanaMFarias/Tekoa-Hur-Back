@@ -1,56 +1,34 @@
 class BaseController {
-  constructor(model, include = []) {
-    this.model = model;
-    this.include = include;
-    this.primaryKey = model.primaryKeyAttribute || 'id'; // Obtener clave primaria dinámica
+  constructor(service) {
+    this.service = service;
   }
 
-  getAll = async (req, res) => {
-    try {
-      const items = await this.model.findAll({ include: this.include });
-      res.json(items);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  getAll = async (req, res, next) => {
+    const items = await this.service.getAll();
+    res.json(items);
   };
 
-  getById = async (req, res) => {
-    try {
-      const item = await this.model.findByPk(req.params.id, { include: this.include });
-      if (!item) return res.status(404).json({ message: "Registro no encontrado" });
-      res.json(item);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  getById = async (req, res, next) => {
+    const item = await this.service.getById(req.params.id);
+    if (!item) return res.status(404).json({ message: "Registro no encontrado" });
+    res.json(item);
   };
 
-  create = async (req, res) => {
-    try {
-      const item = await this.model.create(req.body);
-      res.status(201).json(item);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  create = async (req, res, next) => {
+    const item = await this.service.create(req.body);
+    res.status(201).json(item);
   };
 
-  update = async (req, res) => {
-    try {
-      const [updated] = await this.model.update(req.body, { where: { [this.primaryKey]: req.params.id } });
-      if (!updated) return res.status(404).json({ message: "Registro no encontrado" });
-      res.json({ message: "Registro actualizado" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  update = async (req, res, next) => {
+    const updated = await this.service.update(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ message: "Registro no encontrado" });
+    res.json({ message: "Registro actualizado" });
   };
 
-  delete = async (req, res) => {
-    try {
-      const deleted = await this.model.destroy({ where: { [this.primaryKey]: req.params.id } });
-      if (!deleted) return res.status(404).json({ message: "Registro no encontrado" });
-      res.json({ message: "Registro eliminado" });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+  delete = async (req, res, next) => {
+    const deleted = await this.service.delete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Registro no encontrado" });
+    res.json({ message: "Registro eliminado" });
   };
 }
 

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Estudiante } = require("../models");
 const estudianteController = require("../controllers/estudianteController");
+const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
@@ -18,7 +19,7 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *     summary: Obtener todos los estudiantes
  *     tags: [Estudiantes]
  */
-router.get("/", estudianteController.getAll);
+router.get("/", asyncHandler(estudianteController.getAll));
 
 /**
  * @swagger
@@ -27,7 +28,7 @@ router.get("/", estudianteController.getAll);
  *     summary: Obtener un estudiante por ID
  *     tags: [Estudiantes]
  */
-router.get("/:id", estudianteController.getById);
+router.get("/:id", asyncHandler(estudianteController.getById));
 
 /**
  * @swagger
@@ -48,7 +49,7 @@ router.post("/",
  *     summary: Actualizar un estudiante
  *     tags: [Estudiantes]
  */
-router.put("/:id", estudianteController.update);
+router.put("/:id", asyncHandler(estudianteController.update));
 
 /**
  * @swagger
@@ -57,6 +58,6 @@ router.put("/:id", estudianteController.update);
  *     summary: Eliminar un estudiante
  *     tags: [Estudiantes]
  */
-router.delete("/:id", estudianteController.delete);
+router.delete("/:id", asyncHandler(estudianteController.delete));
 
 module.exports = router;
