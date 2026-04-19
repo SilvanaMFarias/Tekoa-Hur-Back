@@ -149,7 +149,8 @@ app.use("/api/comisiones", require("./routes/comisiones"));
 app.use("/api/matriculas", require("./routes/matriculas"));
 app.use("/api/horarios", require("./routes/horarios"));
 app.use("/api/asistencias", require("./routes/asistencias"));
-
+app.use("/api/feriados", require("./routes/feriados"));
+app.use("/api/tipo-eventos", require("./routes/tipoEventos"));
 
 app.get("/", (req, res) => {
   res.send("Servidor iniciado correctamente 🚀");
