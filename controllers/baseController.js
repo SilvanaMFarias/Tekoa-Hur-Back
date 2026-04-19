@@ -1,8 +1,8 @@
-// controllers/baseController.js
 class BaseController {
   constructor(model, include = []) {
     this.model = model;
     this.include = include;
+    this.primaryKey = model.primaryKeyAttribute || 'id'; // Obtener clave primaria dinámica
   }
 
   getAll = async (req, res) => {
@@ -35,7 +35,7 @@ class BaseController {
 
   update = async (req, res) => {
     try {
-      const [updated] = await this.model.update(req.body, { where: { asistenciaId: req.params.id } });
+      const [updated] = await this.model.update(req.body, { where: { [this.primaryKey]: req.params.id } });
       if (!updated) return res.status(404).json({ message: "Registro no encontrado" });
       res.json({ message: "Registro actualizado" });
     } catch (err) {
@@ -45,7 +45,7 @@ class BaseController {
 
   delete = async (req, res) => {
     try {
-      const deleted = await this.model.destroy({ where: { asistenciaId: req.params.id } });
+      const deleted = await this.model.destroy({ where: { [this.primaryKey]: req.params.id } });
       if (!deleted) return res.status(404).json({ message: "Registro no encontrado" });
       res.json({ message: "Registro eliminado" });
     } catch (err) {

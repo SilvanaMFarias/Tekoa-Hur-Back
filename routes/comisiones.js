@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { Comision } = require("../models");
+const { Comision, Materia, Profesor } = require("../models");
 const comisionController = require("../controllers/comisionController");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
 
 /**
  * @swagger
@@ -17,14 +19,7 @@ const comisionController = require("../controllers/comisionController");
  *     summary: Obtener todas las comisiones
  *     tags: [Comisiones]
  */
-router.get("/", async (req, res, next) => {
-  try {
-    const comisiones = await Comision.findAll();
-    res.json(comisiones);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/", comisionController.getAll);
 
 /**
  * @swagger
@@ -33,21 +28,7 @@ router.get("/", async (req, res, next) => {
  *     summary: Obtener una comisión por ID
  *     tags: [Comisiones]
  */
-router.get("/:id", async (req, res, next) => {
-  try {
-    const comision = await Comision.findByPk(req.params.id);
-
-    if (!comision) {
-      const error = new Error("Comisión no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json(comision);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/:id", comisionController.getById);
 
 /**
  * @swagger
@@ -56,23 +37,12 @@ router.get("/:id", async (req, res, next) => {
  *     summary: Crear una comisión
  *     tags: [Comisiones]
  */
-router.post("/", async (req, res, next) => {
-  try {
-    const { cod_comision, materiaId, profesorId } = req.body;
-
-    // Validación básica
-    if (!cod_comision || !materiaId || !profesorId) {
-      const error = new Error("Faltan datos obligatorios");
-      error.status = 400;
-      return next(error);
-    }
-
-    const comision = await Comision.create(req.body);
-    res.status(201).json(comision);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post("/", 
+  validateRequiredFields(['cod_comision', 'materiaId', 'profesorId']),
+  validateForeignKey(Materia, 'materiaId', 'materiaId'),
+  validateForeignKey(Profesor, 'profesorId', 'profesorId'),
+  comisionController.create
+);
 
 /**
  * @swagger
@@ -81,23 +51,11 @@ router.post("/", async (req, res, next) => {
  *     summary: Actualizar una comisión
  *     tags: [Comisiones]
  */
-router.put("/:id", async (req, res, next) => {
-  try {
-    const [updated] = await Comision.update(req.body, {
-      where: { comisionId: req.params.id }
-    });
-
-    if (!updated) {
-      const error = new Error("Comisión no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Comisión actualizada" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.put("/:id", 
+  validateForeignKey(Materia, 'materiaId', 'materiaId'),
+  validateForeignKey(Profesor, 'profesorId', 'profesorId'),
+  comisionController.update
+);
 
 /**
  * @swagger
@@ -106,22 +64,6 @@ router.put("/:id", async (req, res, next) => {
  *     summary: Eliminar una comisión
  *     tags: [Comisiones]
  */
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const deleted = await Comision.destroy({
-      where: { comisionId: req.params.id }
-    });
-
-    if (!deleted) {
-      const error = new Error("Comisión no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Comisión eliminada" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete("/:id", comisionController.delete);
 
 module.exports = router;

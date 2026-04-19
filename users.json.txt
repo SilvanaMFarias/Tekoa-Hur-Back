@@ -1,0 +1,6 @@
+
+{
+  "usuario1": "clave",
+  "usuario2": "clave",
+  "usuario3": "clave"
+}
