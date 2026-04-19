@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Comision } = require("../models");
+const comisionController = require("../controllers/comisionController");
 
 /**
  * @swagger

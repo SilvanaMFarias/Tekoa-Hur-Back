@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Estudiante } = require("../models");
+const estudianteController = require("../controllers/estudianteController");
 
 /**
  * @swagger

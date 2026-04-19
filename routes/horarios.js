@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Horario, Comision, Aula } = require("../models");
+const horarioController = require("../controllers/horarioController");
 
 /**
  * @swagger

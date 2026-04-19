@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Matricula } = require("../models");
+const matriculaController = require("../controllers/matriculaController");
 
 /**
  * @swagger

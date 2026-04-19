@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Edificio } = require("../models");
+const edificioController = require("../controllers/edificioController");
 
 /**
  * @swagger
