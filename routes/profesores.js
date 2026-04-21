@@ -1,3 +1,4 @@
+// routes/profesores.js
 const express = require("express");
 const router = express.Router();
 const profesorController = require("../controllers/profesorController");
