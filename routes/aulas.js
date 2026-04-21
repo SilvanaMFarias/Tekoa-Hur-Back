@@ -1,6 +1,7 @@
+// routes/aulas.js
 const express = require("express");
 const router = express.Router();
-const { Aula } = require("../models"); // Importa desde models/index.js
+const aulaController = require("../controllers/aulaController");
 
 /**
  * @swagger
@@ -19,14 +20,7 @@ const { Aula } = require("../models"); // Importa desde models/index.js
  *       200:
  *         description: Lista de aulas
  */
-router.get("/", async (req, res) => {
-  try {
-    const aulas = await Aula.findAll();
-    res.json(aulas);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/", aulaController.getAll);
 
 /**
  * @swagger
@@ -41,15 +35,7 @@ router.get("/", async (req, res) => {
  *         schema:
  *           type: string
  */
-router.get("/:id", async (req, res) => {
-  try {
-    const aula = await Aula.findByPk(req.params.id);
-    if (!aula) return res.status(404).json({ message: "Aula no encontrada" });
-    res.json(aula);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/:id", aulaController.getById);
 
 /**
  * @swagger
@@ -57,28 +43,8 @@ router.get("/:id", async (req, res) => {
  *   post:
  *     summary: Crear un aula
  *     tags: [Aulas]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               sector:
- *                 type: string
- *               numero:
- *                 type: string
- *               edificioId:
- *                 type: string
  */
-router.post("/", async (req, res) => {
-  try {
-    const aula = await Aula.create(req.body);
-    res.status(201).json(aula);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", aulaController.create);
 
 /**
  * @swagger
@@ -87,15 +53,7 @@ router.post("/", async (req, res) => {
  *     summary: Actualizar un aula
  *     tags: [Aulas]
  */
-router.put("/:id", async (req, res) => {
-  try {
-    const [updated] = await Aula.update(req.body, { where: { aulaId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Aula no encontrada" });
-    res.json({ message: "Aula actualizada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.put("/:id", aulaController.update);
 
 /**
  * @swagger
@@ -104,14 +62,6 @@ router.put("/:id", async (req, res) => {
  *     summary: Eliminar un aula
  *     tags: [Aulas]
  */
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Aula.destroy({ where: { aulaId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Aula no encontrada" });
-    res.json({ message: "Aula eliminada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.delete("/:id", aulaController.delete);
 
 module.exports = router;

@@ -1,6 +1,7 @@
+// routes/materias.js
 const express = require("express");
 const router = express.Router();
-const { Materia } = require("../models"); // Importa desde models/index.js
+const materiaController = require("../controllers/materiaController");
 
 /**
  * @swagger
@@ -19,14 +20,7 @@ const { Materia } = require("../models"); // Importa desde models/index.js
  *       200:
  *         description: Lista de materias
  */
-router.get("/", async (req, res) => {
-  try {
-    const materias = await Materia.findAll();
-    res.json(materias);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/", materiaController.getAll);
 
 /**
  * @swagger
@@ -45,15 +39,7 @@ router.get("/", async (req, res) => {
  *       200:
  *          description: Materia encontrada
  */
-router.get("/:id", async (req, res) => {
-  try {
-    const materia = await Materia.findByPk(req.params.id);
-    if (!materia) return res.status(404).json({ message: "Materia no encontrada" });
-    res.json(materia);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get("/:id", materiaController.getById);
 
 /**
  * @swagger
@@ -67,18 +53,16 @@ router.get("/:id", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - nombre
  *             properties:
  *               nombre:
  *                 type: string
+ *     responses:
+ *       200:
+ *          description: Materia creada
  */
-router.post("/", async (req, res) => {
-  try {
-    const materia = await Materia.create(req.body);
-    res.status(201).json(materia);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", materiaController.create);
 
 /**
  * @swagger
@@ -112,15 +96,7 @@ router.post("/", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.put("/:id", async (req, res) => {
-  try {
-    const [updated] = await Materia.update(req.body, { where: { materiaId: req.params.id } });
-    if (!updated) return res.status(404).json({ message: "Materia no encontrada" });
-    res.json({ message: "Materia actualizada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.put("/:id", materiaController.update);
 
 /**
  * @swagger
@@ -141,14 +117,9 @@ router.put("/:id", async (req, res) => {
  *       404:
  *         description: Materia no encontrada
  */
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Materia.destroy({ where: { materiaId: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: "Materia no encontrada" });
-    res.json({ message: "Materia eliminada" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.delete("/:id", materiaController.delete);
+
+// Ruta extra con lógica específica (opcional)
+router.get("/nombre/:nombre", materiaController.getByNombre);
 
 module.exports = router;
