@@ -1,7 +1,6 @@
-// routes/profesores.js
 const express = require("express");
 const router = express.Router();
-const profesorController = require("../controllers/profesorController");
+const { Profesor } = require("../models"); // Importa desde models/index.js
 
 /**
  * @swagger
@@ -20,7 +19,14 @@ const profesorController = require("../controllers/profesorController");
  *       200:
  *         description: Lista de profesores
  */
-router.get("/", profesorController.getAll);
+router.get("/", async (req, res) => {
+  try {
+    const profesores = await Profesor.findAll();
+    res.json(profesores);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -35,7 +41,15 @@ router.get("/", profesorController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", profesorController.getById);
+router.get("/:id", async (req, res) => {
+  try {
+    const profesor = await Profesor.findByPk(req.params.id);
+    if (!profesor) return res.status(404).json({ message: "Profesor no encontrado" });
+    res.json(profesor);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -57,7 +71,14 @@ router.get("/:id", profesorController.getById);
  *               email:
  *                 type: string
  */
-router.post("/", profesorController.create);
+router.post("/", async (req, res) => {
+  try {
+    const profesor = await Profesor.create(req.body);
+    res.status(201).json(profesor);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -66,7 +87,15 @@ router.post("/", profesorController.create);
  *     summary: Actualizar un profesor
  *     tags: [Profesores]
  */
-router.put("/:id", profesorController.update);
+router.put("/:id", async (req, res) => {
+  try {
+    const [updated] = await Profesor.update(req.body, { where: { profesorId: req.params.id } });
+    if (!updated) return res.status(404).json({ message: "Profesor no encontrado" });
+    res.json({ message: "Profesor actualizado" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -75,10 +104,14 @@ router.put("/:id", profesorController.update);
  *     summary: Eliminar un profesor
  *     tags: [Profesores]
  */
-router.delete("/:id", profesorController.delete);
-
-// Rutas extra con lógica específica
-router.get("/dni/:dni", profesorController.getByDni);
-router.get("/nombre/:nombre", profesorController.getByNombre);
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Profesor.destroy({ where: { profesorId: req.params.id } });
+    if (!deleted) return res.status(404).json({ message: "Profesor no encontrado" });
+    res.json({ message: "Profesor eliminado" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

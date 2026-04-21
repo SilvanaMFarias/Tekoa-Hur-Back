@@ -1,7 +1,6 @@
-// routes/asistencias.js
 const express = require("express");
 const router = express.Router();
-const asistenciaController = require("../controllers/asistenciaController");
+const { Asistencia, Comision } = require("../models"); // Importa desde models/index.js
 
 /**
  * @swagger
@@ -20,7 +19,16 @@ const asistenciaController = require("../controllers/asistenciaController");
  *       200:
  *         description: Lista de asistencias
  */
-router.get("/", asistenciaController.getAll);
+router.get("/", async (req, res) => {
+  try {
+    const asistencias = await Asistencia.findAll({
+      include: [{ model: Comision, as: "comision" }]
+    });
+    res.json(asistencias);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -35,7 +43,17 @@ router.get("/", asistenciaController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", asistenciaController.getById);
+router.get("/:id", async (req, res) => {
+  try {
+    const asistencia = await Asistencia.findByPk(req.params.id, {
+      include: [{ model: Comision, as: "comision" }]
+    });
+    if (!asistencia) return res.status(404).json({ message: "Asistencia no encontrada" });
+    res.json(asistencia);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -67,7 +85,14 @@ router.get("/:id", asistenciaController.getById);
  *               comisionId:
  *                 type: string
  */
-router.post("/", asistenciaController.create);
+router.post("/", async (req, res) => {
+  try {
+    const asistencia = await Asistencia.create(req.body);
+    res.status(201).json(asistencia);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -76,7 +101,15 @@ router.post("/", asistenciaController.create);
  *     summary: Actualizar una asistencia
  *     tags: [Asistencias]
  */
-router.put("/:id", asistenciaController.update);
+router.put("/:id", async (req, res) => {
+  try {
+    const [updated] = await Asistencia.update(req.body, { where: { asistenciaId: req.params.id } });
+    if (!updated) return res.status(404).json({ message: "Asistencia no encontrada" });
+    res.json({ message: "Asistencia actualizada" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -85,9 +118,14 @@ router.put("/:id", asistenciaController.update);
  *     summary: Eliminar una asistencia
  *     tags: [Asistencias]
  */
-router.delete("/:id", asistenciaController.delete);
-
-// Ruta extra con lógica específica
-router.get("/usuario/:usuarioId", asistenciaController.getByUsuario);
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Asistencia.destroy({ where: { asistenciaId: req.params.id } });
+    if (!deleted) return res.status(404).json({ message: "Asistencia no encontrada" });
+    res.json({ message: "Asistencia eliminada" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

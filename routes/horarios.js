@@ -1,7 +1,6 @@
-// routes/horarios.js
 const express = require("express");
 const router = express.Router();
-const horarioController = require("../controllers/horarioController");
+const { Horario, Comision, Aula } = require("../models"); // Importa desde models/index.js
 
 /**
  * @swagger
@@ -20,7 +19,19 @@ const horarioController = require("../controllers/horarioController");
  *       200:
  *         description: Lista de horarios
  */
-router.get("/", horarioController.getAll);
+router.get("/", async (req, res) => {
+  try {
+    const horarios = await Horario.findAll({
+      include: [
+        { model: Comision, as: "comision" },
+        { model: Aula, as: "aula" }
+      ]
+    });
+    res.json(horarios);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -35,7 +46,20 @@ router.get("/", horarioController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", horarioController.getById);
+router.get("/:id", async (req, res) => {
+  try {
+    const horario = await Horario.findByPk(req.params.id, {
+      include: [
+        { model: Comision, as: "comision" },
+        { model: Aula, as: "aula" }
+      ]
+    });
+    if (!horario) return res.status(404).json({ message: "Horario no encontrado" });
+    res.json(horario);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -65,7 +89,14 @@ router.get("/:id", horarioController.getById);
  *               aulaId:
  *                 type: string
  */
-router.post("/", horarioController.create);
+router.post("/", async (req, res) => {
+  try {
+    const horario = await Horario.create(req.body);
+    res.status(201).json(horario);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -74,7 +105,15 @@ router.post("/", horarioController.create);
  *     summary: Actualizar un horario
  *     tags: [Horarios]
  */
-router.put("/:id", horarioController.update);
+router.put("/:id", async (req, res) => {
+  try {
+    const [updated] = await Horario.update(req.body, { where: { horarioId: req.params.id } });
+    if (!updated) return res.status(404).json({ message: "Horario no encontrado" });
+    res.json({ message: "Horario actualizado" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * @swagger
@@ -83,6 +122,14 @@ router.put("/:id", horarioController.update);
  *     summary: Eliminar un horario
  *     tags: [Horarios]
  */
-router.delete("/:id", horarioController.delete);
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Horario.destroy({ where: { horarioId: req.params.id } });
+    if (!deleted) return res.status(404).json({ message: "Horario no encontrado" });
+    res.json({ message: "Horario eliminado" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

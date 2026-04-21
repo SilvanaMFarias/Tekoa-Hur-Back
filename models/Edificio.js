@@ -2,6 +2,8 @@ const { Model, DataTypes } = require('sequelize');
 
 class Edificio extends Model {
   static associate(models) {
+    // Un edificio tiene muchas aulas
+    Edificio.hasMany(models.Aula, { foreignKey: 'edificioId', as: 'aulas' });
   }
 }
 
