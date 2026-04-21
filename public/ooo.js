@@ -1,34 +1,49 @@
 require("dotenv").config();
-
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
-const errorHandler = require("./middleware/errorhandlers");
-const notFound = require("./middleware/notFound");
+
 const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const sequelize = require("./config/database");
 const { swaggerUi, swaggerSpec } = require("./swagger");
+/*
+Express: framework principal del servidor.
+CORS: permite que el frontend (React) se comunique con el backend.
+Session: gestiona sesiones de usuario (para login y Swagger).
+Body-parser: interpreta datos enviados por formularios.
+Sequelize: conecta con la base de datos.
+Swagger: documenta la API.
+*/
 
-// Crear la app primero
+const cargarExcelRoutes = require("./routes/cargarExcel");
+
+
+
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Middlewares iniciales
 app.use(express.static("public"));
+/////
+
+
+
+// habilitar CORS para el front
 app.use(cors({
-  origin: "http://localhost:3000",
+  origin: "http://localhost:3000", // dirección de tu front
   credentials: true
 }));
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Configuración de sesión
 app.use(session({
-  secret: "tekoadocsecret",
+  secret: "tekoadocsecret", // clave interna para firmar la cookie
   resave: false,
   saveUninitialized: true,
 }));
+// Crea una cookie de sesión para manejar autenticación tempora
 
 // Middleware para proteger /api-docs
 function checkAuth(req, res, next) {
@@ -126,6 +141,8 @@ app.post("/login", (req, res) => {
   }
 });
 
+// Swagger protegido
+app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rutas CRUD (sin login adicional)
 app.use("/api/estudiantes", require("./routes/estudiantes"));
@@ -137,58 +154,13 @@ app.use("/api/comisiones", require("./routes/comisiones"));
 app.use("/api/matriculas", require("./routes/matriculas"));
 app.use("/api/horarios", require("./routes/horarios"));
 app.use("/api/asistencias", require("./routes/asistencias"));
-app.use("/api/feriados", require("./routes/feriados"));
-app.use("/api/tipo-eventos", require("./routes/tipoEventos"));
+app.use("/api/cargar-excel", require("./routes/cargarExcel");
 
 
-
-
-
-
-
-
-
-
-// Importar rutas
-const importarRoutes = require("./routes/importar");
-const aulasRoutes = require("./routes/aulas");
-const comisionesRoutes = require("./routes/comisiones");
-const edificiosRoutes = require("./routes/edificios");
-const estudiantesRoutes = require("./routes/estudiantes");
-const horariosRoutes = require("./routes/horarios");
-const materiasRoutes = require("./routes/materias");
-const matriculasRoutes = require("./routes/matriculas");
-const profesoresRoutes = require("./routes/profesores");
-const asistenciasRoutes = require("./routes/asistencias");
-
-// Usar rutas
-app.use("/api/importar", importarRoutes);
-app.use("/api/aulas", aulasRoutes);
-app.use("/api/comisiones", comisionesRoutes);
-app.use("/api/edificios", edificiosRoutes);
-app.use("/api/estudiantes", estudiantesRoutes);
-app.use("/api/horarios", horariosRoutes);
-app.use("/api/materias", materiasRoutes);
-app.use("/api/matriculas", matriculasRoutes);
-app.use("/api/profesores", profesoresRoutes);
-app.use("/api/asistencias", asistenciasRoutes);
-
-// Swagger protegido
-function checkAuth(req, res, next) {
-  if (req.session && req.session.authenticated) {
-    return next();
-  } else {
-    res.redirect("/login");
-  }
-}
-app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Ruta raíz
 app.get("/", (req, res) => {
   res.send("Servidor iniciado correctamente 🚀");
 });
 
-// Conexión DB y levantar servidor
 sequelize.sync().then(() => {
   app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
