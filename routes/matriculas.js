@@ -1,3 +1,4 @@
+// routes/matriculas.js
 const express = require("express");
 const router = express.Router();
 const { Matricula, Estudiante, Comision } = require("../models");

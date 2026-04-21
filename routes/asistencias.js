@@ -1,3 +1,4 @@
+// routes/asistencias.js
 const express = require("express");
 const router = express.Router();
 const { Asistencia, Comision, Estudiante } = require("../models");

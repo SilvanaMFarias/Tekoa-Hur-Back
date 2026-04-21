@@ -16,10 +16,17 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4, 
       primaryKey: true 
     },
+    /*
     dni: { 
       type: DataTypes.STRING, 
       primaryKey: true, 
       allowNull: false 
+    },
+    */
+    dni: { 
+      type: DataTypes.STRING, 
+      allowNull: false,
+      unique: true   // ✅ índice único en vez de PK
     },
     nombre_apellido: { 
       type: DataTypes.STRING, 

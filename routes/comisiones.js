@@ -1,3 +1,4 @@
+// routes/comisiones.js
 const express = require("express");
 const router = express.Router();
 const { Comision, Materia, Profesor } = require("../models");
