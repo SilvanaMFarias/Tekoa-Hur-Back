@@ -1,4 +1,4 @@
-// routes/asistencias.js
+﻿// routes/asistencias.js
 const express = require("express");
 const router = express.Router();
 const { Asistencia, Comision, Estudiante } = require("../models");
@@ -6,12 +6,13 @@ const asistenciaController = require("../controllers/asistenciaController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateForeignKey = require("../middleware/foreignKeyValidation");
+const validateAsistencia = require("../middleware/validateAsistencia");
 
 /**
  * @swagger
  * tags:
  *   - name: Asistencias
- *     description: Endpoints para gestión de asistencias
+ *     description: Endpoints para gestiÃ³n de asistencias
  */
 
 /**
@@ -40,9 +41,8 @@ router.get("/:id", asyncHandler(asistenciaController.getById));
  *     tags: [Asistencias]
  */
 router.post("/", 
-  validateRequiredFields(['fecha', 'horaRegistro', 'tipoUsuario', 'usuarioId', 'estado', 'comisionId']),
-  validateForeignKey(Estudiante, 'usuarioId', 'dni'),
-  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  validateRequiredFields(['fecha', 'horaRegistro', 'tipoUsuario', 'usuarioId', 'estado', 'comisionId', 'aulaId']),
+  validateAsistencia,
   asistenciaController.create
 );
 
@@ -54,8 +54,7 @@ router.post("/",
  *     tags: [Asistencias]
  */
 router.put("/:id", 
-  validateForeignKey(Estudiante, 'usuarioId', 'dni'),
-  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  validateAsistencia,
   asistenciaController.update
 );
 
