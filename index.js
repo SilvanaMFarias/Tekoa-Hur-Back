@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+// Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
+const errorHandler = require("./middleware/errorhandlers");
+const notFound = require("./middleware/notFound");
 const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
@@ -124,7 +127,18 @@ app.post("/login", (req, res) => {
 });
 
 
-
+// Rutas CRUD (sin login adicional)
+app.use("/api/estudiantes", require("./routes/estudiantes"));
+app.use("/api/edificios", require("./routes/edificios"));
+app.use("/api/aulas", require("./routes/aulas"));
+app.use("/api/materias", require("./routes/materias"));
+app.use("/api/profesores", require("./routes/profesores"));
+app.use("/api/comisiones", require("./routes/comisiones"));
+app.use("/api/matriculas", require("./routes/matriculas"));
+app.use("/api/horarios", require("./routes/horarios"));
+app.use("/api/asistencias", require("./routes/asistencias"));
+app.use("/api/feriados", require("./routes/feriados"));
+app.use("/api/tipo-eventos", require("./routes/tipoEventos"));
 
 
 

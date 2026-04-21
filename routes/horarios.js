@@ -1,6 +1,7 @@
 // routes/horarios.js
 const express = require("express");
 const router = express.Router();
+const { Horario, Comision, Aula } = require("../models");
 const horarioController = require("../controllers/horarioController");
 
 /**
@@ -16,11 +17,20 @@ const horarioController = require("../controllers/horarioController");
  *   get:
  *     summary: Obtener todos los horarios
  *     tags: [Horarios]
- *     responses:
- *       200:
- *         description: Lista de horarios
  */
-router.get("/", horarioController.getAll);
+router.get("/", async (req, res, next) => {
+  try {
+    const horarios = await Horario.findAll({
+      include: [
+        { model: Comision, as: "comision" },
+        { model: Aula, as: "aula" }
+      ]
+    });
+    res.json(horarios);
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * @swagger
@@ -28,14 +38,27 @@ router.get("/", horarioController.getAll);
  *   get:
  *     summary: Obtener un horario por ID
  *     tags: [Horarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
-router.get("/:id", horarioController.getById);
+router.get("/:id", async (req, res, next) => {
+  try {
+    const horario = await Horario.findByPk(req.params.id, {
+      include: [
+        { model: Comision, as: "comision" },
+        { model: Aula, as: "aula" }
+      ]
+    });
+
+    if (!horario) {
+      const error = new Error("Horario no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
+    res.json(horario);
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * @swagger
@@ -43,29 +66,31 @@ router.get("/:id", horarioController.getById);
  *   post:
  *     summary: Crear un horario
  *     tags: [Horarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               diaSemana:
- *                 type: string
- *               horaDesde:
- *                 type: string
- *                 format: time
- *               horaHasta:
- *                 type: string
- *                 format: time
- *               periodicidad:
- *                 type: string
- *               comisionId:
- *                 type: string
- *               aulaId:
- *                 type: string
  */
-router.post("/", horarioController.create);
+router.post("/", async (req, res, next) => {
+  try {
+    const {
+      diaSemana,
+      horaDesde,
+      horaHasta,
+      periodicidad,
+      comisionId,
+      aulaId
+    } = req.body;
+
+    // Validación básica
+    if (!diaSemana || !horaDesde || !horaHasta || !periodicidad || !comisionId || !aulaId) {
+      const error = new Error("Faltan datos obligatorios");
+      error.status = 400;
+      return next(error);
+    }
+
+    const horario = await Horario.create(req.body);
+    res.status(201).json(horario);
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * @swagger
@@ -74,7 +99,23 @@ router.post("/", horarioController.create);
  *     summary: Actualizar un horario
  *     tags: [Horarios]
  */
-router.put("/:id", horarioController.update);
+router.put("/:id", async (req, res, next) => {
+  try {
+    const [updated] = await Horario.update(req.body, {
+      where: { horarioId: req.params.id }
+    });
+
+    if (!updated) {
+      const error = new Error("Horario no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
+    res.json({ message: "Horario actualizado" });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * @swagger
@@ -83,6 +124,22 @@ router.put("/:id", horarioController.update);
  *     summary: Eliminar un horario
  *     tags: [Horarios]
  */
-router.delete("/:id", horarioController.delete);
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const deleted = await Horario.destroy({
+      where: { horarioId: req.params.id }
+    });
+
+    if (!deleted) {
+      const error = new Error("Horario no encontrado");
+      error.status = 404;
+      return next(error);
+    }
+
+    res.json({ message: "Horario eliminado" });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;
