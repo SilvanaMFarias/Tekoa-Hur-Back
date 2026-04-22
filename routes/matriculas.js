@@ -1,6 +1,7 @@
 // routes/matriculas.js
 const express = require("express");
 const router = express.Router();
+const { Matricula, Estudiante, Comision } = require("../models");
 const matriculaController = require("../controllers/matriculaController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");

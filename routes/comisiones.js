@@ -1,6 +1,7 @@
 // routes/comisiones.js
 const express = require("express");
 const router = express.Router();
+const { Comision, Materia, Profesor } = require("../models");
 const comisionController = require("../controllers/comisionController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
