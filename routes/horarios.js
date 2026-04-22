@@ -1,6 +1,7 @@
 // routes/horarios.js
 const express = require("express");
 const router = express.Router();
+const { Horario, Comision, Aula } = require("../models");
 const horarioController = require("../controllers/horarioController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
