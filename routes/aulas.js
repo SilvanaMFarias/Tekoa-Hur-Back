@@ -16,19 +16,11 @@ const aulaController = require("../controllers/aulaController");
  *   get:
  *     summary: Obtener todas las aulas
  *     tags: [Aulas]
+ *     responses:
+ *       200:
+ *         description: Lista de aulas
  */
-router.get("/", async (req, res, next) => {
-  try {
-    const aulas = await Aula.findAll({
-      include: {
-        association: "edificio"
-      }
-    });
-    res.json(aulas);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/", aulaController.getAll);
 
 /**
  * @swagger
@@ -36,26 +28,14 @@ router.get("/", async (req, res, next) => {
  *   get:
  *     summary: Obtener un aula por ID
  *     tags: [Aulas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
-router.get("/:id", async (req, res, next) => {
-  try {
-    const aula = await Aula.findByPk(req.params.id, {
-      include: {
-        association: "edificio"
-      }
-    });
-
-    if (!aula) {
-      const error = new Error("Aula no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json(aula);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/:id", aulaController.getById);
 
 /**
  * @swagger
@@ -64,31 +44,7 @@ router.get("/:id", async (req, res, next) => {
  *     summary: Crear un aula
  *     tags: [Aulas]
  */
-router.post("/", async (req, res, next) => {
-  try {
-    const { edificioId } = req.body;
-
-    // Validar datos
-    if (!edificioId) {
-      const error = new Error("Falta edificioId");
-      error.status = 400;
-      return next(error);
-    }
-
-    // Validar que el edificio exista
-    const edificio = await Edificio.findByPk(edificioId);
-    if (!edificio) {
-      const error = new Error("Edificio inválido");
-      error.status = 400;
-      return next(error);
-    }
-
-    const aula = await Aula.create(req.body);
-    res.status(201).json(aula);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post("/", aulaController.create);
 
 /**
  * @swagger
@@ -97,33 +53,7 @@ router.post("/", async (req, res, next) => {
  *     summary: Actualizar un aula
  *     tags: [Aulas]
  */
-router.put("/:id", async (req, res, next) => {
-  try {
-    // Validar edificio si se envía
-    if (req.body.edificioId) {
-      const edificio = await Edificio.findByPk(req.body.edificioId);
-      if (!edificio) {
-        const error = new Error("Edificio inválido");
-        error.status = 400;
-        return next(error);
-      }
-    }
-
-    const [updated] = await Aula.update(req.body, {
-      where: { aulaId: req.params.id }
-    });
-
-    if (!updated) {
-      const error = new Error("Aula no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Aula actualizada" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.put("/:id", aulaController.update);
 
 /**
  * @swagger
@@ -132,22 +62,6 @@ router.put("/:id", async (req, res, next) => {
  *     summary: Eliminar un aula
  *     tags: [Aulas]
  */
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const deleted = await Aula.destroy({
-      where: { aulaId: req.params.id }
-    });
-
-    if (!deleted) {
-      const error = new Error("Aula no encontrada");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Aula eliminada" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete("/:id", aulaController.delete);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
-const errorHandler = require("./middleware/errorhandlers");
+const errorHandler = require("./middleware/errorHandlers");
 const notFound = require("./middleware/notFound");
 const cors = require("cors");
 const express = require("express");
@@ -126,29 +126,6 @@ app.post("/login", (req, res) => {
   }
 });
 
-
-// Rutas CRUD (sin login adicional)
-app.use("/api/estudiantes", require("./routes/estudiantes"));
-app.use("/api/edificios", require("./routes/edificios"));
-app.use("/api/aulas", require("./routes/aulas"));
-app.use("/api/materias", require("./routes/materias"));
-app.use("/api/profesores", require("./routes/profesores"));
-app.use("/api/comisiones", require("./routes/comisiones"));
-app.use("/api/matriculas", require("./routes/matriculas"));
-app.use("/api/horarios", require("./routes/horarios"));
-app.use("/api/asistencias", require("./routes/asistencias"));
-app.use("/api/feriados", require("./routes/feriados"));
-app.use("/api/tipo-eventos", require("./routes/tipoEventos"));
-
-
-
-
-
-
-
-
-
-
 // Importar rutas
 const importarRoutes = require("./routes/importar");
 const aulasRoutes = require("./routes/aulas");
@@ -160,6 +137,8 @@ const materiasRoutes = require("./routes/materias");
 const matriculasRoutes = require("./routes/matriculas");
 const profesoresRoutes = require("./routes/profesores");
 const asistenciasRoutes = require("./routes/asistencias");
+const feriadosRoutes = require("./routes/feriados");
+const tipoEventosRoutes = require("./routes/tipoEventos");
 
 // Usar rutas
 app.use("/api/importar", importarRoutes);
@@ -172,6 +151,8 @@ app.use("/api/materias", materiasRoutes);
 app.use("/api/matriculas", matriculasRoutes);
 app.use("/api/profesores", profesoresRoutes);
 app.use("/api/asistencias", asistenciasRoutes);
+app.use("/api/feriados", feriadosRoutes);
+app.use("/api/tipoEventos", tipoEventosRoutes);
 
 // Swagger protegido
 function checkAuth(req, res, next) {
