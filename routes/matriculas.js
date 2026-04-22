@@ -2,6 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const matriculaController = require("../controllers/matriculaController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
 
 /**
  * @swagger
@@ -20,7 +23,7 @@ const matriculaController = require("../controllers/matriculaController");
  *       200:
  *         description: Lista de matrículas
  */
-router.get("/", matriculaController.getAll);
+router.get("/", asyncHandler(matriculaController.getAll));
 
 /**
  * @swagger
@@ -35,7 +38,7 @@ router.get("/", matriculaController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", matriculaController.getById);
+router.get("/:id", asyncHandler(matriculaController.getById));
 
 /**
  * @swagger
@@ -58,7 +61,12 @@ router.get("/:id", matriculaController.getById);
  *                 type: string
  *                 format: date
  */
-router.post("/", matriculaController.create);
+router.post("/", 
+  validateRequiredFields(['estudianteDni', 'comisionId', 'fechaInscripcion']),
+  validateForeignKey(Estudiante, 'estudianteDni', 'dni'),
+  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  matriculaController.create
+);
 
 /**
  * @swagger
@@ -67,7 +75,11 @@ router.post("/", matriculaController.create);
  *     summary: Actualizar una matrícula
  *     tags: [Matriculas]
  */
-router.put("/:id", matriculaController.update);
+router.put("/:id", 
+  validateForeignKey(Estudiante, 'estudianteDni', 'dni'),
+  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  matriculaController.update
+);
 
 /**
  * @swagger
@@ -76,6 +88,6 @@ router.put("/:id", matriculaController.update);
  *     summary: Eliminar una matrícula
  *     tags: [Matriculas]
  */
-router.delete("/:id", matriculaController.delete);
+router.delete("/:id", asyncHandler(matriculaController.delete));
 
 module.exports = router;

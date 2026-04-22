@@ -2,12 +2,16 @@
 const express = require("express");
 const router = express.Router();
 const asistenciaController = require("../controllers/asistenciaController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
+const validateAsistencia = require("../middleware/validateAsistencia");
 
 /**
  * @swagger
  * tags:
  *   - name: Asistencias
- *     description: Endpoints para gestión de asistencias
+ *     description: Endpoints para gestiÃ³n de asistencias
  */
 
 /**
@@ -20,7 +24,7 @@ const asistenciaController = require("../controllers/asistenciaController");
  *       200:
  *         description: Lista de asistencias
  */
-router.get("/", asistenciaController.getAll);
+router.get("/", asyncHandler(asistenciaController.getAll));
 
 /**
  * @swagger
@@ -35,7 +39,7 @@ router.get("/", asistenciaController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", asistenciaController.getById);
+router.get("/:id", asyncHandler(asistenciaController.getById));
 
 /**
  * @swagger
@@ -67,7 +71,11 @@ router.get("/:id", asistenciaController.getById);
  *               comisionId:
  *                 type: string
  */
-router.post("/", asistenciaController.create);
+router.post("/", 
+  validateRequiredFields(['fecha', 'horaRegistro', 'tipoUsuario', 'usuarioId', 'estado', 'comisionId', 'aulaId']),
+  validateAsistencia,
+  asistenciaController.create
+);
 
 /**
  * @swagger
@@ -76,7 +84,10 @@ router.post("/", asistenciaController.create);
  *     summary: Actualizar una asistencia
  *     tags: [Asistencias]
  */
-router.put("/:id", asistenciaController.update);
+router.put("/:id", 
+  validateAsistencia,
+  asistenciaController.update
+);
 
 /**
  * @swagger
@@ -85,9 +96,6 @@ router.put("/:id", asistenciaController.update);
  *     summary: Eliminar una asistencia
  *     tags: [Asistencias]
  */
-router.delete("/:id", asistenciaController.delete);
-
-// Ruta extra con lógica específica
-router.get("/usuario/:usuarioId", asistenciaController.getByUsuario);
+router.delete("/:id", asyncHandler(asistenciaController.delete));
 
 module.exports = router;

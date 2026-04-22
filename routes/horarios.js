@@ -2,6 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const horarioController = require("../controllers/horarioController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
 
 /**
  * @swagger
@@ -20,7 +23,7 @@ const horarioController = require("../controllers/horarioController");
  *       200:
  *         description: Lista de horarios
  */
-router.get("/", horarioController.getAll);
+router.get("/", asyncHandler(horarioController.getAll));
 
 /**
  * @swagger
@@ -35,7 +38,7 @@ router.get("/", horarioController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", horarioController.getById);
+router.get("/:id", asyncHandler(horarioController.getById));
 
 /**
  * @swagger
@@ -65,7 +68,12 @@ router.get("/:id", horarioController.getById);
  *               aulaId:
  *                 type: string
  */
-router.post("/", horarioController.create);
+router.post("/", 
+  validateRequiredFields(['diaSemana', 'horaDesde', 'horaHasta', 'periodicidad', 'comisionId', 'aulaId']),
+  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  validateForeignKey(Aula, 'aulaId', 'aulaId'),
+  horarioController.create
+);
 
 /**
  * @swagger
@@ -74,7 +82,11 @@ router.post("/", horarioController.create);
  *     summary: Actualizar un horario
  *     tags: [Horarios]
  */
-router.put("/:id", horarioController.update);
+router.put("/:id", 
+  validateForeignKey(Comision, 'comisionId', 'comisionId'),
+  validateForeignKey(Aula, 'aulaId', 'aulaId'),
+  horarioController.update
+);
 
 /**
  * @swagger
@@ -83,6 +95,6 @@ router.put("/:id", horarioController.update);
  *     summary: Eliminar un horario
  *     tags: [Horarios]
  */
-router.delete("/:id", horarioController.delete);
+router.delete("/:id", asyncHandler(horarioController.delete));
 
 module.exports = router;

@@ -2,6 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const comisionController = require("../controllers/comisionController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
 
 /**
  * @swagger
@@ -20,7 +23,7 @@ const comisionController = require("../controllers/comisionController");
  *       200:
  *         description: Lista de comisiones
  */
-router.get("/", comisionController.getAll);
+router.get("/", asyncHandler(comisionController.getAll));
 
 /**
  * @swagger
@@ -35,7 +38,7 @@ router.get("/", comisionController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", comisionController.getById);
+router.get("/:id", asyncHandler(comisionController.getById));
 
 /**
  * @swagger
@@ -57,7 +60,12 @@ router.get("/:id", comisionController.getById);
  *               profesorId:
  *                 type: string
  */
-router.post("/", comisionController.create);
+router.post("/", 
+  validateRequiredFields(['cod_comision', 'materiaId', 'profesorId']),
+  validateForeignKey(Materia, 'materiaId', 'materiaId'),
+  validateForeignKey(Profesor, 'profesorId', 'profesorId'),
+  comisionController.create
+);
 
 /**
  * @swagger
@@ -66,7 +74,11 @@ router.post("/", comisionController.create);
  *     summary: Actualizar una comisión
  *     tags: [Comisiones]
  */
-router.put("/:id", comisionController.update);
+router.put("/:id", 
+  validateForeignKey(Materia, 'materiaId', 'materiaId'),
+  validateForeignKey(Profesor, 'profesorId', 'profesorId'),
+  comisionController.update
+);
 
 /**
  * @swagger
@@ -75,6 +87,6 @@ router.put("/:id", comisionController.update);
  *     summary: Eliminar una comisión
  *     tags: [Comisiones]
  */
-router.delete("/:id", comisionController.delete);
+router.delete("/:id", asyncHandler(comisionController.delete));
 
 module.exports = router;

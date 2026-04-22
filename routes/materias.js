@@ -2,6 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const materiaController = require("../controllers/materiaController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
  * @swagger
@@ -20,7 +22,7 @@ const materiaController = require("../controllers/materiaController");
  *       200:
  *         description: Lista de materias
  */
-router.get("/", materiaController.getAll);
+router.get("/", asyncHandler(materiaController.getAll));
 
 /**
  * @swagger
@@ -39,7 +41,7 @@ router.get("/", materiaController.getAll);
  *       200:
  *          description: Materia encontrada
  */
-router.get("/:id", materiaController.getById);
+router.get("/:id", asyncHandler(materiaController.getById));
 
 /**
  * @swagger
@@ -62,7 +64,10 @@ router.get("/:id", materiaController.getById);
  *       200:
  *          description: Materia creada
  */
-router.post("/", materiaController.create);
+router.post("/", 
+  validateRequiredFields(['nombre']),
+  materiaController.create
+);
 
 /**
  * @swagger
@@ -96,7 +101,7 @@ router.post("/", materiaController.create);
  *       500:
  *         description: Error interno del servidor
  */
-router.put("/:id", materiaController.update);
+router.put("/:id", asyncHandler(materiaController.update));
 
 /**
  * @swagger
@@ -117,9 +122,6 @@ router.put("/:id", materiaController.update);
  *       404:
  *         description: Materia no encontrada
  */
-router.delete("/:id", materiaController.delete);
-
-// Ruta extra con lógica específica (opcional)
-router.get("/nombre/:nombre", materiaController.getByNombre);
+router.delete("/:id", asyncHandler(materiaController.delete));
 
 module.exports = router;

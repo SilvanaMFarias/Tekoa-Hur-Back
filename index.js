@@ -3,6 +3,7 @@ require("dotenv").config();
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
 const errorHandler = require("./middleware/errorHandlers");
 const notFound = require("./middleware/notFound");
+
 const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
@@ -168,6 +169,9 @@ app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/", (req, res) => {
   res.send("Servidor iniciado correctamente 🚀");
 });
+
+app.use(notFound);      
+app.use(errorHandler);
 
 // Conexión DB y levantar servidor
 sequelize.sync().then(() => {

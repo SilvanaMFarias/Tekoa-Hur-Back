@@ -2,6 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const estudianteController = require("../controllers/estudianteController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
  * @swagger
@@ -20,13 +22,13 @@ const estudianteController = require("../controllers/estudianteController");
  *       200:
  *         description: Lista de estudiantes
  */
-router.get("/", estudianteController.getAll);
+router.get("/", asyncHandler(estudianteController.getAll));
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   get:
- *     summary: Obtener un estudiante por DNI
+ *     summary: Obtener un estudiante por ID
  *     tags: [Estudiantes]
  *     parameters:
  *       - in: path
@@ -35,7 +37,7 @@ router.get("/", estudianteController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:dni", estudianteController.getById);
+router.get("/:id", asyncHandler(estudianteController.getById));
 
 /**
  * @swagger
@@ -55,27 +57,27 @@ router.get("/:dni", estudianteController.getById);
  *               nombre_apellido:
  *                 type: string
  */
-router.post("/", estudianteController.create);
+router.post("/", 
+  validateRequiredFields(['dni', 'nombre_apellido']),
+  estudianteController.create
+);
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   put:
  *     summary: Actualizar un estudiante
  *     tags: [Estudiantes]
  */
-router.put("/:dni", estudianteController.update);
+router.put("/:id", asyncHandler(estudianteController.update));
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   delete:
  *     summary: Eliminar un estudiante
  *     tags: [Estudiantes]
  */
-router.delete("/:dni", estudianteController.delete);
-
-// Ruta extra con lógica específica
-router.get("/nombre/:nombre", estudianteController.getByNombre);
+router.delete("/:id", asyncHandler(estudianteController.delete));
 
 module.exports = router;

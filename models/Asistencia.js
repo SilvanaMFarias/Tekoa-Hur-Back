@@ -2,8 +2,24 @@ const { Model, DataTypes } = require('sequelize');
 
 class Asistencia extends Model {
   static associate(models) {
-    // La asistencia se registra sobre una comisión en un día dado
+    // Relación original
     Asistencia.belongsTo(models.Comision, { foreignKey: 'comisionId', as: 'comision' });
+
+    // Nuevas relaciones
+    // Usamos belongsTo porque la Asistencia contiene la FK (usuarioId)
+    Asistencia.belongsTo(models.Matricula, { 
+      foreignKey: 'usuarioId', 
+      targetKey: 'estudianteDni', 
+      constraints: false, 
+      as: 'detalleMatricula' 
+    });
+
+    Asistencia.belongsTo(models.Profesor, { 
+      foreignKey: 'usuarioId', 
+      targetKey: 'dni', 
+      constraints: false, 
+      as: 'detalleProfesor' 
+    });
   }
 }
 
@@ -23,7 +39,6 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('ESTUDIANTE', 'PROFESOR'), 
       allowNull: false 
     },
-    // ID o DNI de quien marca la asistencia
     usuarioId: { 
       type: DataTypes.STRING, 
       allowNull: false 
@@ -37,7 +52,6 @@ module.exports = (sequelize) => {
     sequelize,
     modelName: 'Asistencia',
     tableName: 'asistencias',
-    // Índices para que el buscador de asistencia sea rápido
     indexes: [
       { fields: ['fecha', 'comisionId', 'usuarioId'], unique: true }
     ]

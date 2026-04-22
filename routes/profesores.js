@@ -2,6 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const profesorController = require("../controllers/profesorController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
  * @swagger
@@ -20,7 +22,7 @@ const profesorController = require("../controllers/profesorController");
  *       200:
  *         description: Lista de profesores
  */
-router.get("/", profesorController.getAll);
+router.get("/", asyncHandler(profesorController.getAll));
 
 /**
  * @swagger
@@ -35,7 +37,7 @@ router.get("/", profesorController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", profesorController.getById);
+router.get("/:id", asyncHandler(profesorController.getById));
 
 /**
  * @swagger
@@ -57,7 +59,10 @@ router.get("/:id", profesorController.getById);
  *               email:
  *                 type: string
  */
-router.post("/", profesorController.create);
+router.post("/", 
+  validateRequiredFields(['dni', 'nombre_apellido', 'email']),
+  profesorController.create
+);
 
 /**
  * @swagger
@@ -66,7 +71,7 @@ router.post("/", profesorController.create);
  *     summary: Actualizar un profesor
  *     tags: [Profesores]
  */
-router.put("/:id", profesorController.update);
+router.put("/:id", asyncHandler(profesorController.update));
 
 /**
  * @swagger
@@ -75,10 +80,6 @@ router.put("/:id", profesorController.update);
  *     summary: Eliminar un profesor
  *     tags: [Profesores]
  */
-router.delete("/:id", profesorController.delete);
-
-// Rutas extra con lógica específica
-router.get("/dni/:dni", profesorController.getByDni);
-router.get("/nombre/:nombre", profesorController.getByNombre);
+router.delete("/:id", asyncHandler(profesorController.delete));
 
 module.exports = router;

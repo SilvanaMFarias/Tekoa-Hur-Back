@@ -2,6 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const edificioController = require("../controllers/edificioController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
  * @swagger
@@ -20,7 +22,7 @@ const edificioController = require("../controllers/edificioController");
  *       200:
  *         description: Lista de edificios
  */
-router.get("/", edificioController.getAll);
+router.get("/", asyncHandler(edificioController.getAll));
 
 /**
  * @swagger
@@ -35,7 +37,7 @@ router.get("/", edificioController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", edificioController.getById);
+router.get("/:id", asyncHandler(edificioController.getById));
 
 /**
  * @swagger
@@ -53,7 +55,10 @@ router.get("/:id", edificioController.getById);
  *               nombre:
  *                 type: string
  */
-router.post("/", edificioController.create);
+router.post("/", 
+  validateRequiredFields(['nombre']),
+  edificioController.create
+);
 
 /**
  * @swagger
@@ -62,7 +67,7 @@ router.post("/", edificioController.create);
  *     summary: Actualizar un edificio
  *     tags: [Edificios]
  */
-router.put("/:id", edificioController.update);
+router.put("/:id", asyncHandler(edificioController.update));
 
 /**
  * @swagger
@@ -71,9 +76,6 @@ router.put("/:id", edificioController.update);
  *     summary: Eliminar un edificio
  *     tags: [Edificios]
  */
-router.delete("/:id", edificioController.delete);
-
-// Ruta extra con lógica específica
-router.get("/nombre/:nombre", edificioController.getByNombre);
+router.delete("/:id", asyncHandler(edificioController.delete));
 
 module.exports = router;

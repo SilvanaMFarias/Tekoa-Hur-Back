@@ -2,6 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const aulaController = require("../controllers/aulaController");
+const asyncHandler = require("../middleware/asyncHandler");
+const { Aula, Edificio } = require("../models");
+const validateRequiredFields = require("../middleware/requiredFields");
+const validateForeignKey = require("../middleware/foreignKeyValidation");
 
 /**
  * @swagger
@@ -20,7 +24,7 @@ const aulaController = require("../controllers/aulaController");
  *       200:
  *         description: Lista de aulas
  */
-router.get("/", aulaController.getAll);
+router.get("/", asyncHandler(aulaController.getAll));
 
 /**
  * @swagger
@@ -35,7 +39,7 @@ router.get("/", aulaController.getAll);
  *         schema:
  *           type: string
  */
-router.get("/:id", aulaController.getById);
+router.get("/:id", asyncHandler(aulaController.getById));
 
 /**
  * @swagger
@@ -44,7 +48,11 @@ router.get("/:id", aulaController.getById);
  *     summary: Crear un aula
  *     tags: [Aulas]
  */
-router.post("/", aulaController.create);
+router.post("/", 
+  validateRequiredFields(['edificioId']),
+  validateForeignKey(Edificio, 'edificioId', 'edificioId'),
+  aulaController.create
+);
 
 /**
  * @swagger
@@ -53,7 +61,10 @@ router.post("/", aulaController.create);
  *     summary: Actualizar un aula
  *     tags: [Aulas]
  */
-router.put("/:id", aulaController.update);
+router.put("/:id", 
+  validateForeignKey(Edificio, 'edificioId', 'edificioId'),
+  aulaController.update
+);
 
 /**
  * @swagger
@@ -62,6 +73,6 @@ router.put("/:id", aulaController.update);
  *     summary: Eliminar un aula
  *     tags: [Aulas]
  */
-router.delete("/:id", aulaController.delete);
+router.delete("/:id", asyncHandler(aulaController.delete));
 
 module.exports = router;

@@ -1,12 +1,12 @@
 'use strict';
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 module.exports = {
   async up(queryInterface) {
     await queryInterface.bulkInsert('asistencias', [
       {
-        asistenciaId: uuidv4(),
+        asistenciaId: randomUUID(),
         fecha: new Date(),
         tipoUsuario: 'ESTUDIANTE',
         usuarioId: '35678093',
