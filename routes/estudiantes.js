@@ -3,6 +3,8 @@ const express = require("express");
 const router = express.Router();
 const { Estudiante } = require("../models");
 const estudianteController = require("../controllers/estudianteController");
+const asyncHandler = require("../middleware/asyncHandler");
+const validateRequiredFields = require("../middleware/requiredFields");
 
 /**
  * @swagger
@@ -18,37 +20,16 @@ const estudianteController = require("../controllers/estudianteController");
  *     summary: Obtener todos los estudiantes
  *     tags: [Estudiantes]
  */
-router.get("/", async (req, res, next) => {
-  try {
-    const estudiantes = await Estudiante.findAll();
-    res.json(estudiantes);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/", asyncHandler(estudianteController.getAll));
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   get:
- *     summary: Obtener un estudiante por DNI
+ *     summary: Obtener un estudiante por ID
  *     tags: [Estudiantes]
  */
-router.get("/:dni", async (req, res, next) => {
-  try {
-    const estudiante = await Estudiante.findByPk(req.params.dni);
-
-    if (!estudiante) {
-      const error = new Error("Estudiante no encontrado");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json(estudiante);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get("/:id", asyncHandler(estudianteController.getById));
 
 /**
  * @swagger
@@ -57,72 +38,27 @@ router.get("/:dni", async (req, res, next) => {
  *     summary: Crear un estudiante
  *     tags: [Estudiantes]
  */
-router.post("/", async (req, res, next) => {
-  try {
-    const { dni, nombre_apellido } = req.body;
-
-    // Validación básica
-    if (!dni || !nombre_apellido) {
-      const error = new Error("Faltan datos obligatorios");
-      error.status = 400;
-      return next(error);
-    }
-
-    const estudiante = await Estudiante.create(req.body);
-    res.status(201).json(estudiante);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post("/", 
+  validateRequiredFields(['dni', 'nombre_apellido']),
+  estudianteController.create
+);
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   put:
  *     summary: Actualizar un estudiante
  *     tags: [Estudiantes]
  */
-router.put("/:dni", async (req, res, next) => {
-  try {
-    const [updated] = await Estudiante.update(req.body, {
-      where: { dni: req.params.dni }
-    });
-
-    if (!updated) {
-      const error = new Error("Estudiante no encontrado");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Estudiante actualizado" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.put("/:id", asyncHandler(estudianteController.update));
 
 /**
  * @swagger
- * /api/estudiantes/{dni}:
+ * /api/estudiantes/{id}:
  *   delete:
  *     summary: Eliminar un estudiante
  *     tags: [Estudiantes]
  */
-router.delete("/:dni", async (req, res, next) => {
-  try {
-    const deleted = await Estudiante.destroy({
-      where: { dni: req.params.dni }
-    });
-
-    if (!deleted) {
-      const error = new Error("Estudiante no encontrado");
-      error.status = 404;
-      return next(error);
-    }
-
-    res.json({ message: "Estudiante eliminado" });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete("/:id", asyncHandler(estudianteController.delete));
 
 module.exports = router;
