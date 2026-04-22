@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
 const errorHandler = require("./middleware/errorhandlers");
 const notFound = require("./middleware/notFound");
