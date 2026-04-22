@@ -48,6 +48,18 @@ router.post("/",
 
 /**
  * @swagger
+ * /api/asistencias/registrar-desde-qr:
+ *   post:
+ *     summary: Registrar asistencia desde QR
+ *     tags: [Asistencias]
+ */
+router.post("/registrar-desde-qr", 
+  validateRequiredFields(['edificioId', 'aulaId', 'rtoken', 'dni', 'fechaInicio', 'fechaFin']),
+  asyncHandler(asistenciaController.registrarDesdeQr)
+);
+
+/**
+ * @swagger
  * /api/asistencias/{id}:
  *   put:
  *     summary: Actualizar una asistencia
