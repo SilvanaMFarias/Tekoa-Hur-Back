@@ -20,6 +20,9 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *   get:
  *     summary: Obtener todas las aulas
  *     tags: [Aulas]
+ *     responses:
+ *       200:
+ *         description: Lista de aulas
  */
 router.get("/", asyncHandler(aulaController.getAll));
 
@@ -29,6 +32,12 @@ router.get("/", asyncHandler(aulaController.getAll));
  *   get:
  *     summary: Obtener un aula por ID
  *     tags: [Aulas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(aulaController.getById));
 

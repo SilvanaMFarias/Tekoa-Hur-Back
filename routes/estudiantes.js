@@ -1,7 +1,6 @@
 // routes/estudiantes.js
 const express = require("express");
 const router = express.Router();
-const { Estudiante } = require("../models");
 const estudianteController = require("../controllers/estudianteController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -19,6 +18,9 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *   get:
  *     summary: Obtener todos los estudiantes
  *     tags: [Estudiantes]
+ *     responses:
+ *       200:
+ *         description: Lista de estudiantes
  */
 router.get("/", asyncHandler(estudianteController.getAll));
 
@@ -28,6 +30,12 @@ router.get("/", asyncHandler(estudianteController.getAll));
  *   get:
  *     summary: Obtener un estudiante por ID
  *     tags: [Estudiantes]
+ *     parameters:
+ *       - in: path
+ *         name: dni
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(estudianteController.getById));
 
@@ -37,6 +45,17 @@ router.get("/:id", asyncHandler(estudianteController.getById));
  *   post:
  *     summary: Crear un estudiante
  *     tags: [Estudiantes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               dni:
+ *                 type: string
+ *               nombre_apellido:
+ *                 type: string
  */
 router.post("/", 
   validateRequiredFields(['dni', 'nombre_apellido']),

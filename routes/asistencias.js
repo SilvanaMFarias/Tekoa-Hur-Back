@@ -1,7 +1,6 @@
 // routes/asistencias.js
 const express = require("express");
 const router = express.Router();
-const { Asistencia, Comision, Estudiante } = require("../models");
 const asistenciaController = require("../controllers/asistenciaController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -21,6 +20,9 @@ const validateAsistencia = require("../middleware/validateAsistencia");
  *   get:
  *     summary: Obtener todas las asistencias
  *     tags: [Asistencias]
+ *     responses:
+ *       200:
+ *         description: Lista de asistencias
  */
 router.get("/", asyncHandler(asistenciaController.getAll));
 
@@ -30,6 +32,12 @@ router.get("/", asyncHandler(asistenciaController.getAll));
  *   get:
  *     summary: Obtener una asistencia por ID
  *     tags: [Asistencias]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(asistenciaController.getById));
 
@@ -39,6 +47,29 @@ router.get("/:id", asyncHandler(asistenciaController.getById));
  *   post:
  *     summary: Registrar una asistencia
  *     tags: [Asistencias]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fecha:
+ *                 type: string
+ *                 format: date
+ *               horaRegistro:
+ *                 type: string
+ *                 format: time
+ *               tipoUsuario:
+ *                 type: string
+ *                 enum: [ESTUDIANTE, PROFESOR]
+ *               usuarioId:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *                 enum: [PRESENTE, AUSENTE, TARDE, JUSTIFICADO]
+ *               comisionId:
+ *                 type: string
  */
 router.post("/", 
   validateRequiredFields(['fecha', 'horaRegistro', 'tipoUsuario', 'usuarioId', 'estado', 'comisionId', 'aulaId']),

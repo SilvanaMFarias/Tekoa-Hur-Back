@@ -1,7 +1,6 @@
 // routes/edificios.js
 const express = require("express");
 const router = express.Router();
-const { Edificio } = require("../models");
 const edificioController = require("../controllers/edificioController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -19,6 +18,9 @@ const validateRequiredFields = require("../middleware/requiredFields");
  *   get:
  *     summary: Obtener todos los edificios
  *     tags: [Edificios]
+ *     responses:
+ *       200:
+ *         description: Lista de edificios
  */
 router.get("/", asyncHandler(edificioController.getAll));
 
@@ -28,6 +30,12 @@ router.get("/", asyncHandler(edificioController.getAll));
  *   get:
  *     summary: Obtener un edificio por ID
  *     tags: [Edificios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(edificioController.getById));
 
@@ -37,6 +45,15 @@ router.get("/:id", asyncHandler(edificioController.getById));
  *   post:
  *     summary: Crear un edificio
  *     tags: [Edificios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
  */
 router.post("/", 
   validateRequiredFields(['nombre']),

@@ -1,7 +1,6 @@
 // routes/horarios.js
 const express = require("express");
 const router = express.Router();
-const { Horario, Comision, Aula } = require("../models");
 const horarioController = require("../controllers/horarioController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -20,6 +19,9 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *   get:
  *     summary: Obtener todos los horarios
  *     tags: [Horarios]
+ *     responses:
+ *       200:
+ *         description: Lista de horarios
  */
 router.get("/", asyncHandler(horarioController.getAll));
 
@@ -29,6 +31,12 @@ router.get("/", asyncHandler(horarioController.getAll));
  *   get:
  *     summary: Obtener un horario por ID
  *     tags: [Horarios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(horarioController.getById));
 
@@ -38,6 +46,27 @@ router.get("/:id", asyncHandler(horarioController.getById));
  *   post:
  *     summary: Crear un horario
  *     tags: [Horarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               diaSemana:
+ *                 type: string
+ *               horaDesde:
+ *                 type: string
+ *                 format: time
+ *               horaHasta:
+ *                 type: string
+ *                 format: time
+ *               periodicidad:
+ *                 type: string
+ *               comisionId:
+ *                 type: string
+ *               aulaId:
+ *                 type: string
  */
 router.post("/", 
   validateRequiredFields(['diaSemana', 'horaDesde', 'horaHasta', 'periodicidad', 'comisionId', 'aulaId']),

@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 // Carga las variables de entorno desde .env (por ejemplo, el puerto o credenciales)
-const errorHandler = require("./middleware/errorhandlers");
+const errorHandler = require("./middleware/errorHandlers");
 const notFound = require("./middleware/notFound");
 
 const cors = require("cors");
@@ -138,6 +138,8 @@ const materiasRoutes = require("./routes/materias");
 const matriculasRoutes = require("./routes/matriculas");
 const profesoresRoutes = require("./routes/profesores");
 const asistenciasRoutes = require("./routes/asistencias");
+const feriadosRoutes = require("./routes/feriados");
+const tipoEventosRoutes = require("./routes/tipoEventos");
 
 // Usar rutas
 app.use("/api/importar", importarRoutes);
@@ -150,6 +152,8 @@ app.use("/api/materias", materiasRoutes);
 app.use("/api/matriculas", matriculasRoutes);
 app.use("/api/profesores", profesoresRoutes);
 app.use("/api/asistencias", asistenciasRoutes);
+app.use("/api/feriados", feriadosRoutes);
+app.use("/api/tipoEventos", tipoEventosRoutes);
 
 // Swagger protegido
 function checkAuth(req, res, next) {

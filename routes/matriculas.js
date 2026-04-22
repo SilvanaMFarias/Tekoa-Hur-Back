@@ -1,7 +1,6 @@
 // routes/matriculas.js
 const express = require("express");
 const router = express.Router();
-const { Matricula, Estudiante, Comision } = require("../models");
 const matriculaController = require("../controllers/matriculaController");
 const asyncHandler = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -20,6 +19,9 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  *   get:
  *     summary: Obtener todas las matrículas
  *     tags: [Matriculas]
+ *     responses:
+ *       200:
+ *         description: Lista de matrículas
  */
 router.get("/", asyncHandler(matriculaController.getAll));
 
@@ -29,6 +31,12 @@ router.get("/", asyncHandler(matriculaController.getAll));
  *   get:
  *     summary: Obtener una matrícula por ID
  *     tags: [Matriculas]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
  */
 router.get("/:id", asyncHandler(matriculaController.getById));
 
@@ -38,6 +46,20 @@ router.get("/:id", asyncHandler(matriculaController.getById));
  *   post:
  *     summary: Crear una matrícula
  *     tags: [Matriculas]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estudianteDni:
+ *                 type: string
+ *               comisionId:
+ *                 type: string
+ *               fechaInscripcion:
+ *                 type: string
+ *                 format: date
  */
 router.post("/", 
   validateRequiredFields(['estudianteDni', 'comisionId', 'fechaInscripcion']),
