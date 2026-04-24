@@ -2,39 +2,52 @@ const { Model, DataTypes } = require('sequelize');
 
 class Aula extends Model {
   static associate(models) {
-    // Relación con Edificio
     Aula.belongsTo(models.Edificio, { foreignKey: 'edificioId', as: 'edificio' });
-    // Relación con Horarios o Comisiones
     Aula.hasMany(models.Horario, { foreignKey: 'aulaId', as: 'horarios' });
   }
 }
 
 module.exports = (sequelize) => {
   Aula.init({
-    aulaId: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    aulaId: { 
+      type: DataTypes.UUID, 
+      defaultValue: DataTypes.UUIDV4, 
+      primaryKey: true 
+    },
+
     sector: { 
       type: DataTypes.STRING, 
-      allowNull: false // Ej: "JS"
+      allowNull: false 
     },
+
     numero: { 
       type: DataTypes.STRING, 
-      allowNull: false // Ej: "004"
+      allowNull: false 
     },
+
     nombreCompleto: {
       type: DataTypes.VIRTUAL,
       get() {
         return `${this.sector}-${this.numero}`;
       }
     },
+
     edificioId: {
       type: DataTypes.UUID,
       allowNull: false
+    },
+
+    rtoken: {
+      type: DataTypes.STRING,
+      allowNull: true
     }
+
   }, {
     sequelize,
     modelName: 'Aula',
     tableName: 'aulas',
     timestamps: false
   });
+
   return Aula;
 };
