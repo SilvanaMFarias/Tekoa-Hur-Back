@@ -18,13 +18,22 @@ const validateForeignKey = require("../middleware/foreignKeyValidation");
  * @swagger
  * /api/aulas:
  *   get:
- *     summary: Obtener todas las aulas
+ *     summary: Obtener aulas (con filtros opcionales)
  *     tags: [Aulas]
+ *     parameters:
+ *       - in: query
+ *         name: edificioId
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Filtrar aulas por edificio
  *     responses:
  *       200:
  *         description: Lista de aulas
  */
-router.get("/", asyncHandler(aulaController.getAll));
+    router.get("/", asyncHandler((req, res, next) =>
+      aulaController.getAll(req, res, next)
+    ));
 
 /**
  * @swagger
@@ -32,12 +41,6 @@ router.get("/", asyncHandler(aulaController.getAll));
  *   get:
  *     summary: Obtener un aula por ID
  *     tags: [Aulas]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  */
 router.get("/:id", asyncHandler(aulaController.getById));
 
@@ -48,9 +51,10 @@ router.get("/:id", asyncHandler(aulaController.getById));
  *     summary: Crear un aula
  *     tags: [Aulas]
  */
-router.post("/", 
-  validateRequiredFields(['edificioId']),
-  validateForeignKey(Edificio, 'edificioId', 'edificioId'),
+router.post(
+  "/",
+  validateRequiredFields(["edificioId"]),
+  validateForeignKey(Edificio, "edificioId", "edificioId"),
   aulaController.create
 );
 
@@ -61,8 +65,9 @@ router.post("/",
  *     summary: Actualizar un aula
  *     tags: [Aulas]
  */
-router.put("/:id", 
-  validateForeignKey(Edificio, 'edificioId', 'edificioId'),
+router.put(
+  "/:id",
+  validateForeignKey(Edificio, "edificioId", "edificioId"),
   aulaController.update
 );
 
