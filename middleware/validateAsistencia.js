@@ -27,7 +27,8 @@ const validateAsistencia = async (req, res, next) => {
     // 2. Validar pertenencia
     if (tipoUsuario === 'ESTUDIANTE') {
       const matricula = await Matricula.findOne({
-        where: { estudianteDni: usuarioId, comisionId }
+        where: { estudianteDni: String(usuarioId).trim(), 
+          comisionId }
       });
 
       if (!matricula) {
@@ -50,7 +51,7 @@ const validateAsistencia = async (req, res, next) => {
     }
 
     // 3. Día de semana
-    const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
     const [year, month, day] = fecha.split('-').map(Number);
     const fechaObj = new Date(year, month - 1, day);
     const nombreDia = diasSemana[fechaObj.getDay()];
