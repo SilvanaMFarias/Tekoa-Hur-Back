@@ -140,6 +140,7 @@ const profesoresRoutes = require("./routes/profesores");
 const asistenciasRoutes = require("./routes/asistencias");
 const feriadosRoutes = require("./routes/feriados");
 const tipoEventosRoutes = require("./routes/tipoEventos");
+const qrRoutes = require("./routes/qr");
 
 // Usar rutas
 app.use("/api/importar", importarRoutes);
@@ -154,7 +155,7 @@ app.use("/api/profesores", profesoresRoutes);
 app.use("/api/asistencias", asistenciasRoutes);
 app.use("/api/feriados", feriadosRoutes);
 app.use("/api/tipoEventos", tipoEventosRoutes);
-
+app.use("/api/qr", qrRoutes); 
 // Swagger protegido
 function checkAuth(req, res, next) {
   if (req.session && req.session.authenticated) {

@@ -98,4 +98,9 @@ router.put("/:id",
  */
 router.delete("/:id", asyncHandler(asistenciaController.delete));
 
+router.post(
+  "/registrar-desde-qr",
+  asyncHandler(asistenciaController.registrarDesdeQR)
+);
+
 module.exports = router;
