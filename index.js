@@ -8,7 +8,11 @@ const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
 const bodyParser = require("body-parser");
+//Agregado para que me cree la DB desde los models
 const sequelize = require("./config/database");
+//const db = require("./models");
+//const sequelize = db.sequelize;
+
 const { swaggerUi, swaggerSpec } = require("./swagger");
 
 // Crear la app primero
@@ -175,9 +179,10 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Conexión DB y levantar servidor
-sequelize.sync().then(() => {
+sequelize.sync({ force: true }).then(() => {
   app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
+
     console.log(`Swagger disponible en http://localhost:${port}/api-docs`);
   });
 }).catch(err => {

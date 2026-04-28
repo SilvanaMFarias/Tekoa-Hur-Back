@@ -7,7 +7,15 @@ module.exports = {
         aulaId: '22222222-2222-2222-2222-222222222222',
         sector: 'JS',
         numero: '004',
-        edificioId: '11111111-1111-1111-1111-111111111111'
+        edificioId: '11111111-1111-1111-1111-111111111111',
+        rtoken: null // Campo opcional
+      },
+      {
+        aulaId: '33333333-3333-3333-3333-333333333333',
+        sector: 'LP',
+        numero: '101',
+        edificioId: '11111111-1111-1111-1111-111111111111',
+        rtoken: 'token123' // Ejemplo de valor opcional
       }
     ]);
   },
