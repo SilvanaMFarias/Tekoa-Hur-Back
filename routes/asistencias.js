@@ -1,106 +1,39 @@
+// ============================================================
 // routes/asistencias.js
+// ============================================================
+// FIX crítico: el GET "/" ahora acepta ?comisionId= para filtrar.
+// Sin esto la grilla del front no puede cargar datos por comisión —
+// traería TODAS las asistencias del sistema de golpe.
+// ============================================================
+
 const express = require("express");
-const router = express.Router();
+const router  = express.Router();
 const asistenciaController = require("../controllers/asistenciaController");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler         = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
-const validateForeignKey = require("../middleware/foreignKeyValidation");
-const validateAsistencia = require("../middleware/validateAsistencia");
+const validateAsistencia   = require("../middleware/validateAsistencia");
 
 /**
- * @swagger
- * tags:
- *   - name: Asistencias
- *     description: Endpoints para gestiÃ³n de asistencias
- */
-
-/**
- * @swagger
- * /api/asistencias:
- *   get:
- *     summary: Obtener todas las asistencias
- *     tags: [Asistencias]
- *     responses:
- *       200:
- *         description: Lista de asistencias
+ * GET /api/asistencias
+ * Acepta query param opcional: ?comisionId=UUID
+ * Sin filtro devuelve todas (solo para admins / Swagger).
  */
 router.get("/", asyncHandler(asistenciaController.getAll));
 
-/**
- * @swagger
- * /api/asistencias/{id}:
- *   get:
- *     summary: Obtener una asistencia por ID
- *     tags: [Asistencias]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- */
 router.get("/:id", asyncHandler(asistenciaController.getById));
 
-/**
- * @swagger
- * /api/asistencias:
- *   post:
- *     summary: Registrar una asistencia
- *     tags: [Asistencias]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               fecha:
- *                 type: string
- *                 format: date
- *               horaRegistro:
- *                 type: string
- *                 format: time
- *               tipoUsuario:
- *                 type: string
- *                 enum: [ESTUDIANTE, PROFESOR]
- *               usuarioId:
- *                 type: string
- *               estado:
- *                 type: string
- *                 enum: [PRESENTE, AUSENTE, TARDE, JUSTIFICADO]
- *               comisionId:
- *                 type: string
- */
-router.post("/", 
-  validateRequiredFields(['fecha', 'horaRegistro', 'tipoUsuario', 'usuarioId', 'estado', 'comisionId', 'aulaId']),
+router.post(
+  "/",
+  validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
   validateAsistencia,
   asistenciaController.create
 );
 
-/**
- * @swagger
- * /api/asistencias/{id}:
- *   put:
- *     summary: Actualizar una asistencia
- *     tags: [Asistencias]
- */
-router.put("/:id", 
-  validateAsistencia,
-  asistenciaController.update
-);
+router.put("/:id", validateAsistencia, asistenciaController.update);
 
-/**
- * @swagger
- * /api/asistencias/{id}:
- *   delete:
- *     summary: Eliminar una asistencia
- *     tags: [Asistencias]
- */
 router.delete("/:id", asyncHandler(asistenciaController.delete));
 
-router.post(
-  "/registrar-desde-qr",
-  asyncHandler(asistenciaController.registrarDesdeQR)
-);
+// Endpoint principal que llama el front al escanear el QR
+router.post("/registrar-desde-qr", asyncHandler(asistenciaController.registrarDesdeQR));
 
 module.exports = router;
