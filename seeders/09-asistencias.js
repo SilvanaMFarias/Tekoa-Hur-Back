@@ -7,11 +7,12 @@ module.exports = {
     await queryInterface.bulkInsert('asistencias', [
       {
         asistenciaId: randomUUID(),
-        fecha: new Date(),
+        fecha: '2026-04-22', // new Date()
         tipoUsuario: 'ESTUDIANTE',
-        usuarioId: '35678093',
+        usuarioId: '77777777',
+        horaRegistro: '16:07:00',
         estado: 'PRESENTE',
-        comisionId: '55555555-5555-5555-5555-555555555555',
+        comisionId: '6ccdf17f-b8ce-440e-a20a-97e50dbb8e96',
         createdAt: new Date(),
         updatedAt: new Date()
       }
