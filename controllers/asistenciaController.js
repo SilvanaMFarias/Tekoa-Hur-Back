@@ -2,18 +2,21 @@
 // controllers/asistenciaController.js
 // ============================================================
 // FIXES:
-//  ✅ getAll ahora filtra por ?comisionId si viene en query
-//     (el BaseController.getAll no soportaba filtros → lo sobreescribimos)
-//  ✅ registrarDesdeQR verifica rtokenExpira
-//  ✅ registrarDesdeQR valida tanto ESTUDIANTE como PROFESOR
-//  ✅ No pasa aulaId a Asistencia.create (el modelo no tiene ese campo)
+//  ✅ getAll filtra por ?comisionId
+//  ✅ registrarDesdeQR usa req.user (JWT)
+//  ✅ NO confía en usuarioId ni tipoUsuario del frontend
+//  ✅ valida expiración de QR
+//  ✅ valida estudiante y profesor
 // ============================================================
 
 const { Asistencia, Comision, Aula, Horario, Profesor, Matricula } = require("../models");
 const BaseController = require("./baseController");
 const BaseService    = require("../services/baseService");
 const { Op }         = require("sequelize");
-
+const { tipoUsuario, usuarioId } = req.body;
+const usuarioId = req.user.id;
+const tipoUsuario = req.user.rol;
+const { aulaId, rtoken, fechaInicio, fechaFin } = req.body;
 function nombreDia(date) {
   return ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"][date.getDay()];
 }
@@ -24,7 +27,6 @@ class AsistenciaController extends BaseController {
   }
 
   // ── GET /api/asistencias?comisionId=UUID ────────────────────
-  // ✅ FIX: sobreescribimos getAll del BaseController para soportar filtro
   getAll = async (req, res, next) => {
     try {
       const { comisionId } = req.query;
@@ -45,10 +47,20 @@ class AsistenciaController extends BaseController {
   // ── POST /api/asistencias/registrar-desde-qr ────────────────
   registrarDesdeQR = async (req, res) => {
     try {
-      const { tipoUsuario, usuarioId, aulaId, rtoken, fechaInicio, fechaFin } = req.body;
+      // 🔐 Usuario autenticado desde JWT
+      if (!req.user) {
+        return res.status(401).json({ message: "No autenticado" });
+      }
 
-      if (!tipoUsuario || !usuarioId || !aulaId || !rtoken) {
-        return res.status(400).json({ message: "Faltan campos: tipoUsuario, usuarioId, aulaId, rtoken" });
+      const usuarioId   = req.user.id;
+      const tipoUsuario = req.user.rol?.toUpperCase();
+
+      const { aulaId, rtoken, fechaInicio, fechaFin } = req.body;
+
+      if (!usuarioId || !tipoUsuario || !aulaId || !rtoken) {
+        return res.status(400).json({
+          message: "Faltan datos de autenticación o QR",
+        });
       }
 
       // 1. Validar QR
@@ -57,7 +69,6 @@ class AsistenciaController extends BaseController {
         return res.status(403).json({ message: "QR inválido o expirado" });
       }
 
-      // ✅ FIX: verificar expiración
       if (aula.rtokenExpira && new Date() > new Date(aula.rtokenExpira)) {
         await aula.update({ rtoken: null, rtokenExpira: null });
         return res.status(403).json({ message: "El QR expiró" });
@@ -67,14 +78,14 @@ class AsistenciaController extends BaseController {
       const fecha        = now.toISOString().split("T")[0];
       const horaRegistro = now.toTimeString().slice(0, 5);
 
-      // 2. Validar ventana de tiempo opcional
+      // 2. Validar ventana opcional
       if (fechaInicio && fechaFin) {
         if (now < new Date(fechaInicio) || now > new Date(fechaFin)) {
-          return res.status(403).json({ message: "QR fuera de su ventana horaria" });
+          return res.status(403).json({ message: "QR fuera de horario" });
         }
       }
 
-      // 3. Buscar horario activo → obtiene comisionId automáticamente
+      // 3. Buscar horario activo
       const horario = await Horario.findOne({
         where: {
           aulaId,
@@ -91,54 +102,73 @@ class AsistenciaController extends BaseController {
 
       if (!horario) {
         return res.status(400).json({
-          message: `No hay clase activa en esta aula (${nombreDia(now)} ${horaRegistro})`,
+          message: `No hay clase activa (${nombreDia(now)} ${horaRegistro})`,
         });
       }
 
       const comisionId = horario.comisionId;
-      const tipo       = tipoUsuario.toUpperCase();
 
       // 4. Validar pertenencia
-      if (tipo === "ESTUDIANTE") {
+      if (tipoUsuario === "ESTUDIANTE") {
         const matricula = await Matricula.findOne({
-          where: { estudianteDni: String(usuarioId).trim(), comisionId },
+          where: {
+            estudianteDni: String(usuarioId).trim(),
+            comisionId,
+          },
         });
+
         if (!matricula) {
-          return res.status(403).json({ message: "No pertenecés a esta comisión" });
+          return res.status(403).json({
+            message: "No pertenecés a esta comisión",
+          });
         }
-      } else if (tipo === "PROFESOR") {
-        // ✅ FIX: validamos al docente también
+      }
+
+      if (tipoUsuario === "PROFESOR") {
         const profe = horario.comision?.profesor;
+
         if (profe && profe.dni !== String(usuarioId).trim()) {
-          return res.status(403).json({ message: "No sos el docente titular de esta comisión" });
+          return res.status(403).json({
+            message: "No sos el docente titular",
+          });
         }
-      } else {
-        return res.status(400).json({ message: 'tipoUsuario debe ser "ESTUDIANTE" o "PROFESOR"' });
       }
 
-      // 5. Evitar doble registro
+      // 5. Evitar duplicados
       const yaExiste = await Asistencia.findOne({
-        where: { usuarioId: String(usuarioId).trim(), comisionId, fecha },
+        where: {
+          usuarioId: String(usuarioId).trim(),
+          comisionId,
+          fecha,
+        },
       });
+
       if (yaExiste) {
-        return res.status(409).json({ message: "Ya registraste tu asistencia hoy" });
+        return res.status(409).json({
+          message: "Ya registraste asistencia hoy",
+        });
       }
 
-      // 6. Crear asistencia — ✅ sin aulaId (no existe en el modelo)
+      // 6. Crear asistencia
       const nueva = await Asistencia.create({
         usuarioId:    String(usuarioId).trim(),
-        tipoUsuario:  tipo,
+        tipoUsuario,
         comisionId,
         fecha,
         horaRegistro,
         estado: "PRESENTE",
       });
 
-      return res.status(201).json({ message: "✅ Asistencia registrada correctamente", data: nueva });
+      return res.status(201).json({
+        message: "✅ Asistencia registrada",
+        data: nueva,
+      });
 
     } catch (error) {
       console.error("Error registrarDesdeQR:", error);
-      return res.status(500).json({ message: "Error interno del servidor" });
+      return res.status(500).json({
+        message: "Error interno del servidor",
+      });
     }
   };
 }

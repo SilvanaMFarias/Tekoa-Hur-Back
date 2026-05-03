@@ -5,19 +5,34 @@ class Estudiante extends Model {
     Estudiante.belongsToMany(models.Comision, {
       through: models.Matricula,
       foreignKey: 'estudianteDni',
-      as: 'comisiones' 
+      as: 'comisiones'
+    });
+
+    // 🔗 relación con Usuario
+    Estudiante.hasOne(models.Usuario, {
+      foreignKey: 'estudianteId',
+      sourceKey: 'dni',
+      as: 'usuario'
     });
   }
 }
 
 module.exports = (sequelize) => {
   Estudiante.init({
-    dni: { type: DataTypes.STRING, primaryKey: true, allowNull: false },
-    nombre_apellido: { type: DataTypes.STRING, allowNull: false },
+    dni: { 
+      type: DataTypes.STRING, 
+      primaryKey: true, 
+      allowNull: false 
+    },
+    nombre_apellido: { 
+      type: DataTypes.STRING, 
+      allowNull: false 
+    },
   }, {
     sequelize,
     modelName: 'Estudiante',
     tableName: 'estudiantes',
   });
+
   return Estudiante;
 };

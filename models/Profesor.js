@@ -2,9 +2,15 @@ const { Model, DataTypes } = require('sequelize');
 
 class Profesor extends Model {
   static associate(models) {
-    Profesor.hasMany(models.Comision, {// Un profesor puede tener a cargo muchas comisiones
+    Profesor.hasMany(models.Comision, {
       foreignKey: 'profesorId', 
       as: 'comisiones' 
+    });
+
+    // 🔗 relación con Usuario
+    Profesor.hasOne(models.Usuario, {
+      foreignKey: 'profesorId',
+      as: 'usuario'
     });
   }
 }
@@ -16,22 +22,14 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4, 
       primaryKey: true 
     },
-    /*
-    dni: { 
-      type: DataTypes.STRING, 
-      primaryKey: true, 
-      allowNull: false 
-    },
-    */
     dni: { 
       type: DataTypes.STRING, 
       allowNull: false,
-      unique: true   // ✅ índice único en vez de PK
+      unique: true
     },
     nombre_apellido: { 
       type: DataTypes.STRING, 
-      allowNull: false,
-      unique: true 
+      allowNull: false
     },
     email: { 
       type: DataTypes.STRING, 
@@ -44,5 +42,6 @@ module.exports = (sequelize) => {
     tableName: 'profesores',
     timestamps: true
   });
+
   return Profesor;
 };

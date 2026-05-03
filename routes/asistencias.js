@@ -1,13 +1,3 @@
-// ============================================================
-// routes/asistencias.js
-// ============================================================
-// CAMBIO: agrega POST /confirmar-dia
-//   → El docente cierra el QR del día y guarda correcciones manuales
-//   → Recibe la lista completa de alumnos con su estado final (P/A)
-//   → Crea los AUSENTES que no escanearon y actualiza los que cambiaron
-//   → Cierra el rtoken del aula para que nadie más pueda escanear
-// ============================================================
-
 const express    = require("express");
 const router     = express.Router();
 const { Op }     = require("sequelize");
@@ -16,7 +6,7 @@ const validateRequiredFields = require("../middleware/requiredFields");
 const validateAsistencia     = require("../middleware/validateAsistencia");
 const asistenciaController   = require("../controllers/asistenciaController");
 const { Asistencia, Aula, Horario, Matricula, Estudiante, Comision } = require("../models");
-
+const auth = require("../middleware/basicAuth");
 // Rutas existentes
 router.get("/",    asyncHandler(asistenciaController.getAll));
 router.get("/:id", asyncHandler(asistenciaController.getById));
@@ -27,8 +17,7 @@ router.post("/",
 );
 router.put("/:id",  validateAsistencia, asistenciaController.update);
 router.delete("/:id", asyncHandler(asistenciaController.delete));
-router.post("/registrar-desde-qr", asyncHandler(asistenciaController.registrarDesdeQR));
-
+router.post( "/registrar-desde-qr",auth,asyncHandler(asistenciaController.registrarDesdeQR));
 // ── POST /api/asistencias/confirmar-dia ──────────────────────
 // El docente confirma la lista del día.
 //

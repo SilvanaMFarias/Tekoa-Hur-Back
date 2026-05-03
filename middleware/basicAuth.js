@@ -1,43 +1,90 @@
 /*
-Función: proteger las rutas del backend.
-Método: autenticación básica HTTP.
-Seguridad: credenciales almacenadas en .
-Resultado: solo usuarios autorizados pueden acceder a los endpoints.
+ permite dos formas de autenticación:
+
+1) JWT (cookie) → para usuarios reales de la app
+2) Basic Auth → fallback para Swagger / testing
+
+Flujo:
+- Si hay cookie → valida JWT
+- Si NO hay cookie → intenta Basic Auth
+- Si nada funciona → rechaza request
+
 */
+
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
-const basicAuth = (req, res, next) => {
-  // Si no hay headers, corta antes
-  // funcion que intercepta cada solicitud antes de llear a la ruta protegida
-  if (!req || !req.headers) {
-    // Si la solicitud no tiene encabezados, se corta inmediatamente con un error 400
-    return res.status(400).json({ message: "Request inválido" });
-  }
+const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
-  const authHeader = req.headers["authorization"];
-  console.log("Authorization recibido:", authHeader);
+const auth = (req, res, next) => {
+  try {
+    // --> JWT DESDE COOKIE
+    
+    /*
+    - El frontend (Next.js) guarda el token en cookie httpOnly
+    - El navegador la envía automáticamente en cada request
+    - Acá la leemos para identificar al usuario
+    */
 
-  if (!authHeader) {
-    return res.status(401).json({ message: "Falta encabezado Authorization" });
-  }
+    const token = req.cookies?.token;
 
-  const [scheme, encoded] = authHeader.split(" ");
-  if (scheme !== "Basic" || !encoded) {
-    // Se asegura de que el esquema sea “Basic” y que haya un token codificado
-    return res.status(401).json({ message: "Formato de Authorization inválido" });
-  }
+    if (token) {
+      try {
+        // Verificamos el token
+        const decoded = jwt.verify(token, JWT_SECRET);
 
-  const credentials = Buffer.from(encoded, "base64").toString("ascii");
-  const [user, password] = credentials.split(":");
-  // Convierte el token Base64 en texto plano
-  // Extrae el usuario y la contraseña separados por “:”
+        // Guardamos info del usuario en la request
+        req.user = decoded;
 
-  if (user === process.env.BASIC_USER && password === process.env.BASIC_PASS) {
-    next();
-  } else {
+        // Continuamos a la ruta protegida
+        return next();
+      } catch {
+        // Token inválido o expirado
+        return res.status(401).json({ message: "Token inválido" });
+      }
+    }
+
+    // --> FALLBACK: BASIC AUTH 
+
+    /*
+    - Solo se ejecuta si NO hay cookie
+    - Se usa principalmente para Swagger
+    - Requiere header Authorization: Basic xxx
+    */
+
+    const authHeader = req.headers["authorization"];
+
+    if (!authHeader) {
+      return res.status(401).json({ message: "No autenticado" });
+    }
+
+    const [scheme, encoded] = authHeader.split(" ");
+
+    if (scheme !== "Basic" || !encoded) {
+      return res.status(401).json({ message: "Formato de Authorization inválido" });
+    }
+
+    // Decodificamos base64 → "usuario:password"
+    const credentials = Buffer.from(encoded, "base64").toString("ascii");
+    const [user, password] = credentials.split(":");
+
+    if (
+      user === process.env.BASIC_USER &&
+      password === process.env.BASIC_PASS
+    ) {
+      // Simulamos usuario autenticado (opcional)
+      req.user = { rol: "admin_basic" };
+
+      return next();
+    }
+
+    // Credenciales incorrectas
     return res.status(403).json({ message: "Credenciales inválidas" });
+
+  } catch (error) {
+    console.error("Auth error:", error);
+    return res.status(500).json({ message: "Error de autenticación" });
   }
-  // Si las credenciales coinciden con las del .env, se llama a next() y la solicitud continúa.
 };
 
-module.exports = basicAuth;
+module.exports = auth;
