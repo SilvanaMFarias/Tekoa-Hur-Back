@@ -1,21 +1,16 @@
 const { Model, DataTypes } = require("sequelize");
 
-class Usuario extends Model {
-  static associate(models) {
-    // 🔗 con Estudiante
-    Usuario.belongsTo(models.Estudiante, {
-      foreignKey: "estudianteId",
-      targetKey: "dni",
-      as: "estudiante",
-    });
-
-    // 🔗 con Profesor
-    Usuario.belongsTo(models.Profesor, {
-      foreignKey: "profesorId",
-      as: "profesor",
-    });
-  }
-}
+/**
+ * Modelo Usuario — tabla de autenticación del sistema.
+ *
+ * Roles:
+ *  - "alumno"        → leer QR + historial propio
+ *  - "docente"       → generar QR + asistencias de sus comisiones
+ *  - "administrador" → acceso total
+ *
+ * referenciaId: conecta con Estudiante.dni (alumno) o Profesor.dni (docente)
+ */
+class Usuario extends Model {}
 
 module.exports = (sequelize) => {
   Usuario.init(
@@ -24,36 +19,36 @@ module.exports = (sequelize) => {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        field: "usuarioId",
       },
-
-      email: {
+      dni: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
-        validate: { isEmail: true },
+        validate: { notEmpty: true },
       },
-
+      nombre: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: true },
+      },
       password: {
         type: DataTypes.STRING,
         allowNull: false,
+        comment: "Hash bcrypt — nunca guardar en texto plano",
       },
-
       rol: {
-        type: DataTypes.ENUM("admin", "profesor", "estudiante"),
+        type: DataTypes.ENUM("alumno", "docente", "administrador"),
         allowNull: false,
+        defaultValue: "alumno",
       },
-
-      estudianteId: {
+      referenciaId: {
         type: DataTypes.STRING,
         allowNull: true,
-        field: "estudianteId",
+        comment: "DNI del Estudiante o Profesor según el rol",
       },
-
-      profesorId: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        field: "profesorId",
+      activo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
       },
     },
     {
@@ -61,10 +56,6 @@ module.exports = (sequelize) => {
       modelName: "Usuario",
       tableName: "usuarios",
       timestamps: true,
-
-      // solo timestamps en snake_case
-      createdAt: "created_at",
-      updatedAt: "updated_at",
     }
   );
 
