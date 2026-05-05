@@ -1,78 +1,110 @@
-const XLSX = require("xlsx");
-const { Edificio, Aula, Profesor, Materia, Comision, Horario, Estudiante, Matricula } = require("../models");
+const XLSX    = require("xlsx");
+const bcrypt  = require("bcryptjs");
+const { Edificio, Aula, Profesor, Materia, Comision, Horario,
+        Estudiante, Matricula, Usuario } = require("../models");
 
-// 🔹 Normalizar días (CLAVE)
+const SALT = 10;
+
+// ─── Helper: crear usuario si no existe (password = DNI) ─────
+// Se usa tanto en la importación como en la sincronización final.
+async function crearUsuarioSiNoExiste(dni, nombre, rol) {
+  const [, created] = await Usuario.findOrCreate({
+    where:    { dni },
+    defaults: {
+      dni,
+      nombre,
+      password:     await bcrypt.hash(dni, SALT),
+      rol,
+      referenciaId: dni,
+      activo:       true,
+    },
+  });
+  return created;
+}
+
+// ─── Helper: sincronizar usuarios para TODOS los existentes ──
+// Corre al final de cada importación para garantizar que ningún
+// alumno o docente quede sin acceso, aunque ya estuviera en la DB.
+async function sincronizarUsuariosExistentes() {
+  let creados = 0;
+
+  const estudiantes = await Estudiante.findAll();
+  for (const est of estudiantes) {
+    const ok = await crearUsuarioSiNoExiste(est.dni, est.nombre_apellido, "alumno");
+    if (ok) creados++;
+  }
+
+  const profesores = await Profesor.findAll();
+  for (const prof of profesores) {
+    const ok = await crearUsuarioSiNoExiste(prof.dni, prof.nombre_apellido, "docente");
+    if (ok) creados++;
+  }
+
+  return creados;
+}
+
+// ─── Helpers de parseo ───────────────────────────────────────
 function normalizarDia(dia) {
   if (!dia) return null;
-
-  return dia
-    .toLowerCase()
+  return dia.toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
 }
 
-// 🔹 Conversión de hora Excel
 function excelTimeToString(val) {
   if (!val && val !== 0) return "00:00:00";
   if (typeof val === "string" && val.includes(":")) return val;
-
   const totalSeconds = Math.round(val * 24 * 3600);
-  const horas = Math.floor(totalSeconds / 3600);
-  const minutos = Math.floor((totalSeconds % 3600) / 60);
-  const segundos = totalSeconds % 60;
-
-  return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
 }
 
-// 🔹 Parseo del Excel
 function parsearExcel(buffer) {
   const workbook = XLSX.read(buffer, { type: "buffer" });
 
   const wsMatriculacion = workbook.Sheets["matriculacion"];
-  const matriculacion = XLSX.utils.sheet_to_json(wsMatriculacion, { header: 1 });
+  const matriculacion   = XLSX.utils.sheet_to_json(wsMatriculacion, { header: 1 });
 
-  const wsComisiones = workbook.Sheets["comisiones"];
+  const wsComisiones  = workbook.Sheets["comisiones"];
   const comisionesRaw = XLSX.utils.sheet_to_json(wsComisiones, { header: 1 });
 
   const comisiones = [];
-
   for (let i = 1; i < comisionesRaw.length; i++) {
-    const fila = comisionesRaw[i];
-    if (!fila[0]) continue;
-
+    const f = comisionesRaw[i];
+    if (!f[0]) continue;
     comisiones.push({
-      cod_comision: String(fila[0]).trim(),
-      docente_nombre: String(fila[1]).trim(),
-      docente_dni: String(fila[2]).trim(),
-      horaDesde: excelTimeToString(fila[3]),
-      horaHasta: excelTimeToString(fila[4]),
-      espacio: String(fila[5]).trim(),
-      edificio: String(fila[6]).trim(),
-      actividad: String(fila[7]).trim(),
-      dia: normalizarDia(String(fila[8]).trim()), // 🔥 NORMALIZADO
+      cod_comision:   String(f[0]).trim(),
+      docente_nombre: String(f[1]).trim(),
+      docente_dni:    String(f[2]).trim(),
+      horaDesde:      excelTimeToString(f[3]),
+      horaHasta:      excelTimeToString(f[4]),
+      espacio:        String(f[5]).trim(),
+      edificio:       String(f[6]).trim(),
+      actividad:      String(f[7]).trim(),
+      dia:            normalizarDia(String(f[8]).trim()),
     });
   }
 
   const estudiantes = [];
-
   for (let i = 1; i < matriculacion.length; i++) {
-    const fila = matriculacion[i];
-    if (!fila[0] || !fila[1]) continue;
-
+    const f = matriculacion[i];
+    if (!f[0] || !f[1]) continue;
     estudiantes.push({
-      nombre_apellido: String(fila[0]).trim(),
-      dni: String(fila[1]).trim(),
-      materia: String(fila[2]).trim(),
-      cod_comision: String(fila[3]).trim(),
-      docente: String(fila[4]).trim(),
+      nombre_apellido: String(f[0]).trim(),
+      dni:             String(f[1]).trim(),
+      materia:         String(f[2]).trim(),
+      cod_comision:    String(f[3]).trim(),
+      docente:         String(f[4]).trim(),
     });
   }
 
   return { comisiones, estudiantes };
 }
 
-// 🔹 PREVIEW
+// ─── PREVIEW ─────────────────────────────────────────────────
 exports.preview = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No se recibió archivo" });
@@ -80,32 +112,31 @@ exports.preview = async (req, res) => {
     const { comisiones, estudiantes } = parsearExcel(req.file.buffer);
 
     const edificiosUnicos = [...new Set(comisiones.map(c => c.edificio))];
-    const aulasUnicas = [...new Set(comisiones.map(c => c.espacio))];
-    const docentesUnicos = [...new Set(comisiones.map(c => c.docente_dni))].map(dni => {
+    const aulasUnicas     = [...new Set(comisiones.map(c => c.espacio))];
+    const docentesUnicos  = [...new Set(comisiones.map(c => c.docente_dni))].map(dni => {
       const c = comisiones.find(x => x.docente_dni === dni);
       return { dni, nombre: c.docente_nombre };
     });
-    const materiasUnicas = [...new Set(comisiones.map(c => c.actividad))];
+    const materiasUnicas  = [...new Set(comisiones.map(c => c.actividad))];
 
     res.json({
       resumen: {
-        comisiones: comisiones.length,
+        comisiones:  comisiones.length,
         estudiantes: estudiantes.length,
-        edificios: edificiosUnicos,
-        aulas: aulasUnicas.length,
-        docentes: docentesUnicos.length,
-        materias: materiasUnicas,
+        edificios:   edificiosUnicos,
+        aulas:       aulasUnicas.length,
+        docentes:    docentesUnicos.length,
+        materias:    materiasUnicas,
       },
       comisiones,
       estudiantes: estudiantes.slice(0, 20),
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 🔹 CONFIRMAR
+// ─── CONFIRMAR ───────────────────────────────────────────────
 exports.confirmar = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No se recibió archivo" });
@@ -113,15 +144,10 @@ exports.confirmar = async (req, res) => {
     const { comisiones, estudiantes } = parsearExcel(req.file.buffer);
 
     const resultados = {
-      edificios: 0,
-      aulas: 0,
-      profesores: 0,
-      materias: 0,
-      comisiones: 0,
-      horarios: 0,
-      estudiantes: 0,
-      matriculas: 0,
-      errores: []
+      edificios: 0, aulas: 0, profesores: 0, materias: 0,
+      comisiones: 0, horarios: 0, estudiantes: 0, matriculas: 0,
+      usuariosCreados: 0,
+      errores: [],
     };
 
     // 1. Edificios
@@ -129,8 +155,8 @@ exports.confirmar = async (req, res) => {
     for (const c of comisiones) {
       if (!edificioMap[c.edificio]) {
         const [edif] = await Edificio.findOrCreate({
-          where: { nombre: c.edificio },
-          defaults: { nombre: c.edificio }
+          where:    { nombre: c.edificio },
+          defaults: { nombre: c.edificio },
         });
         edificioMap[c.edificio] = edif;
         resultados.edificios++;
@@ -141,32 +167,32 @@ exports.confirmar = async (req, res) => {
     const aulaMap = {};
     for (const c of comisiones) {
       if (!aulaMap[c.espacio]) {
-        const partes = c.espacio.replace("AULA ", "").split("-");
-        const sector = partes[0] || c.espacio;
-        const numero = partes[1] || "000";
+        const partes  = c.espacio.replace("AULA ", "").split("-");
+        const sector  = partes[0] || c.espacio;
+        const numero  = partes[1] || "000";
         const edificio = edificioMap[c.edificio];
-
         const [aula] = await Aula.findOrCreate({
-          where: { sector, numero, edificioId: edificio.edificioId },
-          defaults: { sector, numero, edificioId: edificio.edificioId }
+          where:    { sector, numero, edificioId: edificio.edificioId },
+          defaults: { sector, numero, edificioId: edificio.edificioId },
         });
-
         aulaMap[c.espacio] = aula;
         resultados.aulas++;
       }
     }
 
-    // 3. Profesores
+    // 3. Profesores + Usuario (password = DNI)
     const profesorMap = {};
     for (const c of comisiones) {
       if (!profesorMap[c.docente_dni]) {
         const [prof] = await Profesor.findOrCreate({
-          where: { dni: c.docente_dni },
-          defaults: { dni: c.docente_dni, nombre_apellido: c.docente_nombre }
+          where:    { dni: c.docente_dni },
+          defaults: { dni: c.docente_dni, nombre_apellido: c.docente_nombre },
         });
-
         profesorMap[c.docente_dni] = prof;
         resultados.profesores++;
+
+        const creado = await crearUsuarioSiNoExiste(c.docente_dni, c.docente_nombre, "docente");
+        if (creado) resultados.usuariosCreados++;
       }
     }
 
@@ -175,10 +201,9 @@ exports.confirmar = async (req, res) => {
     for (const c of comisiones) {
       if (!materiaMap[c.actividad]) {
         const [mat] = await Materia.findOrCreate({
-          where: { nombre: c.actividad },
-          defaults: { nombre: c.actividad }
+          where:    { nombre: c.actividad },
+          defaults: { nombre: c.actividad },
         });
-
         materiaMap[c.actividad] = mat;
         resultados.materias++;
       }
@@ -186,82 +211,76 @@ exports.confirmar = async (req, res) => {
 
     // 5. Comisiones + Horarios
     const comisionMap = {};
-
     for (const c of comisiones) {
-      const materia = materiaMap[c.actividad];
+      const materia  = materiaMap[c.actividad];
       const profesor = profesorMap[c.docente_dni];
-
       const [comision, created] = await Comision.findOrCreate({
         where: {
           cod_comision: c.cod_comision,
-          materiaId: materia.materiaId,
-          profesorId: profesor.profesorId
+          materiaId:    materia.materiaId,
+          profesorId:   profesor.profesorId,
         },
         defaults: {
           cod_comision: c.cod_comision,
-          materiaId: materia.materiaId,
-          profesorId: profesor.profesorId
-        }
+          materiaId:    materia.materiaId,
+          profesorId:   profesor.profesorId,
+        },
       });
-
       if (created) resultados.comisiones++;
       comisionMap[c.cod_comision] = comision;
 
       const aula = aulaMap[c.espacio];
-
       const [, horCreated] = await Horario.findOrCreate({
         where: {
           comisionId: comision.comisionId,
-          diaSemana: c.dia, // 🔥 YA NORMALIZADO
-          aulaId: aula.aulaId
+          diaSemana:  c.dia,
+          aulaId:     aula.aulaId,
         },
         defaults: {
-          diaSemana: c.dia,
-          horaDesde: c.horaDesde,
-          horaHasta: c.horaHasta,
+          diaSemana:  c.dia,
+          horaDesde:  c.horaDesde,
+          horaHasta:  c.horaHasta,
           comisionId: comision.comisionId,
-          aulaId: aula.aulaId,
-        }
+          aulaId:     aula.aulaId,
+        },
       });
-
       if (horCreated) resultados.horarios++;
     }
 
-    // 6. Estudiantes + Matrículas
+    // 6. Estudiantes + Matrículas + Usuario (password = DNI)
     for (const e of estudiantes) {
       if (!e.dni || e.dni === "undefined" || e.dni === "NaN") continue;
 
       const [estud, estCreated] = await Estudiante.findOrCreate({
-        where: { dni: e.dni },
-        defaults: { dni: e.dni, nombre_apellido: e.nombre_apellido }
+        where:    { dni: e.dni },
+        defaults: { dni: e.dni, nombre_apellido: e.nombre_apellido },
       });
-
       if (estCreated) resultados.estudiantes++;
 
-      const comision = comisionMap[e.cod_comision];
+      const creado = await crearUsuarioSiNoExiste(e.dni, e.nombre_apellido, "alumno");
+      if (creado) resultados.usuariosCreados++;
 
+      const comision = comisionMap[e.cod_comision];
       if (!comision) {
-        resultados.errores.push(`Comisión no encontrada para estudiante ${e.dni}: ${e.cod_comision}`);
+        resultados.errores.push(`Comisión no encontrada para ${e.dni}: ${e.cod_comision}`);
         continue;
       }
-
-      const [, matCreated] = await Matricula.findOrCreate({
-        where: {
-          estudianteDni: estud.dni,
-          comisionId: comision.comisionId
-        },
-        defaults: {
-          estudianteDni: estud.dni,
-          comisionId: comision.comisionId
-        }
+      await Matricula.findOrCreate({
+        where:    { estudianteDni: estud.dni, comisionId: comision.comisionId },
+        defaults: { estudianteDni: estud.dni, comisionId: comision.comisionId },
       });
-
-      if (matCreated) resultados.matriculas++;
+      resultados.matriculas++;
     }
+
+    // ✅ Sincronización final — crea usuarios para alumnos/docentes que
+    // ya estaban en la DB antes de esta importación y no tenían usuario.
+    // Esto garantiza que NUNCA sea necesario correr seeds manualmente.
+    const sincronizados = await sincronizarUsuariosExistentes();
+    resultados.usuariosCreados += sincronizados;
 
     res.json({
       mensaje: "Importación completada con éxito",
-      resultados
+      resultados,
     });
 
   } catch (err) {

@@ -174,3 +174,82 @@ router.get("/dia", async (req, res) => {
 });
 
 module.exports = router;
+// ── POST /api/asistencias/docente-presente ───────────────────
+// El docente registra su propia presencia sin necesidad de QR.
+// Requiere JWT válido con rol docente.
+// Solo valida día/hora y que sea titular de la comisión.
+// No requiere rtoken — el JWT es suficiente autenticación.
+router.post("/docente-presente", async (req, res) => {
+  try {
+    const { comisionId } = req.body;
+    if (!comisionId) {
+      return res.status(400).json({ message: "comisionId es requerido." });
+    }
+
+    const { Asistencia, Comision, Horario, Profesor } = require("../models");
+    const { Op } = require("sequelize");
+
+    const now          = new Date();
+    const fecha        = now.toISOString().split("T")[0];
+    const horaRegistro = now.toTimeString().slice(0, 5);
+    const dias         = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+    const nombreDia    = dias[now.getDay()];
+
+    // Verificar que la comisión existe
+    const comision = await Comision.findByPk(comisionId, {
+      include: [{ model: Profesor, as: "profesor" }],
+    });
+    if (!comision) {
+      return res.status(404).json({ message: "Comisión no encontrada." });
+    }
+
+    // Verificar que el docente logueado es el titular
+    // req.usuario viene del middleware jwtAuth
+    const dniDocente = req.usuario?.dni;
+    if (comision.profesor && comision.profesor.dni !== String(dniDocente).trim()) {
+      return res.status(403).json({ message: "No sos el docente titular de esta comisión." });
+    }
+
+    // Verificar que hay horario activo ahora
+    const horario = await Horario.findOne({
+      where: {
+        comisionId,
+        diaSemana:  nombreDia,
+        horaDesde:  { [Op.lte]: horaRegistro },
+        horaHasta:  { [Op.gte]: horaRegistro },
+      },
+    });
+    if (!horario) {
+      return res.status(400).json({
+        message: `No hay clase activa ahora en esta comisión (${nombreDia} ${horaRegistro}).`,
+      });
+    }
+
+    // Evitar doble registro en el mismo día
+    const yaExiste = await Asistencia.findOne({
+      where: { usuarioId: String(dniDocente).trim(), comisionId, fecha },
+    });
+    if (yaExiste) {
+      return res.status(409).json({ message: "Ya registraste tu presencia hoy en esta comisión." });
+    }
+
+    // Crear asistencia del docente
+    const nueva = await Asistencia.create({
+      usuarioId:    String(dniDocente).trim(),
+      tipoUsuario:  "PROFESOR",
+      comisionId,
+      fecha,
+      horaRegistro,
+      estado:       "PRESENTE",
+    });
+
+    return res.status(201).json({
+      message: "✅ Presencia registrada correctamente.",
+      data:    nueva,
+    });
+
+  } catch (err) {
+    console.error("Error docente-presente:", err);
+    return res.status(500).json({ message: "Error interno del servidor." });
+  }
+});

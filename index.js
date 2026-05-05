@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+ 
 const fs          = require("fs");
 const express     = require("express");
 const cors        = require("cors");
@@ -7,14 +7,14 @@ const session     = require("express-session");
 const bodyParser  = require("body-parser");
 const sequelize   = require("./config/database");
 const { swaggerUi, swaggerSpec } = require("./swagger");
-
+ 
 const errorHandler = require("./middleware/errorHandlers");
 const notFound     = require("./middleware/notFound");
-const jwtAuth      = require("./middleware/jwtAuth");       // ✅ NUEVO
-const requireRole  = require("./middleware/requireRole");    // ✅ NUEVO
-
+const jwtAuth      = require("./middleware/jwtAuth");
+const requireRole  = require("./middleware/requireRole");
+ 
 // Routes
-const authRoutes        = require("./routes/auth");          // ✅ NUEVO
+const authRoutes        = require("./routes/auth");
 const importarRoutes    = require("./routes/importar");
 const aulasRoutes       = require("./routes/aulas");
 const comisionesRoutes  = require("./routes/comisiones");
@@ -28,32 +28,26 @@ const asistenciasRoutes = require("./routes/asistencias");
 const feriadosRoutes    = require("./routes/feriados");
 const tipoEventosRoutes = require("./routes/tipoEventos");
 const qrRoutes          = require("./routes/qr");
-
+ 
 const app  = express();
 const port = process.env.PORT || 3001;
-
+ 
 app.use(express.static("public"));
-
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  credentials: true,
-}));
-
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }));
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(session({
   secret: process.env.SESSION_SECRET || "tekoadocsecret-cambiame",
   resave: false,
   saveUninitialized: true,
 }));
-
-// ── Login de Swagger (sesión, no JWT) ───────────────────────
+ 
+// ── Swagger auth ─────────────────────────────────────────────
 function checkAuth(req, res, next) {
-  if (req.session && req.session.authenticated) return next();
+  if (req.session?.authenticated) return next();
   res.redirect("/login");
 }
-
+ 
 app.get("/login", (req, res) => {
   res.send(`<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f0f0f0">
     <div style="background:white;padding:2rem;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.1);width:320px;text-align:center">
@@ -66,9 +60,8 @@ app.get("/login", (req, res) => {
     </div>
   </body></html>`);
 });
-
+ 
 const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
-
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (users[username] && users[username] === password) {
@@ -78,16 +71,12 @@ app.post("/login", (req, res) => {
     res.send("Credenciales inválidas. <a href='/login'>Volver</a>");
   }
 });
-
-// ── Ruta pública de autenticación (no requiere JWT) ──────────
+ 
+// ── Rutas públicas ───────────────────────────────────────────
 app.use("/api/auth", authRoutes);
-
-// ── Ruta pública: escaneo de QR (el alumno no tiene sesión) ──
-// registrar-desde-qr y validar son públicos — el rtoken es la "auth"
-app.use("/api/qr", qrRoutes);
-
-// ── Rutas protegidas con JWT ─────────────────────────────────
-// Cualquier rol puede acceder a estas rutas (autenticación mínima)
+app.use("/api/qr",   qrRoutes);
+ 
+// ── Rutas protegidas (cualquier rol autenticado) ─────────────
 app.use("/api/aulas",       jwtAuth, aulasRoutes);
 app.use("/api/comisiones",  jwtAuth, comisionesRoutes);
 app.use("/api/edificios",   jwtAuth, edificiosRoutes);
@@ -98,27 +87,54 @@ app.use("/api/profesores",  jwtAuth, profesoresRoutes);
 app.use("/api/feriados",    jwtAuth, feriadosRoutes);
 app.use("/api/tipoEventos", jwtAuth, tipoEventosRoutes);
 app.use("/api/asistencias", jwtAuth, asistenciasRoutes);
-
-// Solo docentes y administradores pueden ver el padrón completo
-app.use("/api/estudiantes", jwtAuth, requireRole("docente", "administrador"), estudiantesRoutes);
-
-// Solo administradores pueden importar planillas
-app.use("/api/importar",    jwtAuth, requireRole("administrador"), importarRoutes);
-
+ 
+// ── Estudiantes: alumno ve solo sus propios datos ────────────
+//
+// ✅ FIX: req.params no está disponible en middleware de app.use()
+//    porque Express todavía no montó la sub-ruta. Se lee el DNI
+//    directamente de req.path (ej: "/77777777" → "77777777").
+//
+const alumnoOAdmin = (req, res, next) => {
+  const { rol, dni } = req.usuario;
+ 
+  // Docente y admin tienen acceso total
+  if (rol === "docente" || rol === "administrador") return next();
+ 
+  if (rol === "alumno") {
+    // El alumno solo puede hacer GET de su propio perfil
+    // req.path en este punto es el path relativo a /api/estudiantes
+    // Ej: GET /api/estudiantes/77777777  →  req.path = "/77777777"
+    const idEnPath = req.path.replace("/", "").split("?")[0];
+ 
+    if (req.method === "GET" && idEnPath === dni) return next();
+ 
+    return res.status(403).json({
+      message: "Solo podés ver tu propio perfil de estudiante.",
+    });
+  }
+ 
+  return res.status(403).json({ message: "Acceso denegado." });
+};
+ 
+app.use("/api/estudiantes", jwtAuth, alumnoOAdmin, estudiantesRoutes);
+ 
+// ── Solo administrador ───────────────────────────────────────
+app.use("/api/importar", jwtAuth, requireRole("administrador"), importarRoutes);
+ 
 // ── Swagger ──────────────────────────────────────────────────
 app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/", (req, res) => res.send("Servidor iniciado correctamente 🚀"));
-
+ 
 app.use(notFound);
 app.use(errorHandler);
-
+ 
 sequelize.sync().then(() => {
   app.listen(port, () => {
     console.log(`✅  http://localhost:${port}`);
     console.log(`📄  http://localhost:${port}/api-docs`);
-    console.log(`🔑  POST /api/auth/seed → crear usuarios de prueba`);
   });
 }).catch(err => {
   console.error("❌ Error DB:", err);
   process.exit(1);
 });
+ 

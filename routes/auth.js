@@ -1,28 +1,30 @@
-const express = require("express");
-const router  = express.Router();
-const jwtAuth = require("../middleware/jwtAuth");
-const { login, me, seedUsuarios } = require("../controllers/authController");
+const express     = require("express");
+const router      = express.Router();
+const jwtAuth     = require("../middleware/jwtAuth");
+const requireRole = require("../middleware/requireRole");
 
-/**
- * POST /api/auth/login
- * Autenticación con DNI y contraseña.
- * Devuelve JWT + datos del usuario.
- * No requiere jwtAuth (es el endpoint de entrada).
- */
+const {
+  login, me, cambiarPassword,
+  listarUsuarios, crearUsuario, editarUsuario, desactivarUsuario, resetPassword,
+  seedUsuarios, seedTodos,
+} = require("../controllers/authController");
+
+// ── Públicas ─────────────────────────────────────────────────
 router.post("/login", login);
 
-/**
- * GET /api/auth/me
- * Devuelve los datos del usuario logueado.
- * Requiere token válido.
- */
-router.get("/me", jwtAuth, me);
+// ── Cualquier usuario autenticado ─────────────────────────────
+router.get("/me",               jwtAuth, me);
+router.put("/cambiar-password", jwtAuth, cambiarPassword);
 
-/**
- * POST /api/auth/seed
- * Crea usuarios de prueba.
- * ⚠️ SOLO PARA DESARROLLO — eliminar o proteger en producción.
- */
-router.post("/seed", seedUsuarios);
+// ── Solo administrador — gestión de usuarios ─────────────────
+router.get(   "/usuarios",                    jwtAuth, requireRole("administrador"), listarUsuarios);
+router.post(  "/usuarios",                    jwtAuth, requireRole("administrador"), crearUsuario);
+router.put(   "/usuarios/:usuarioId",         jwtAuth, requireRole("administrador"), editarUsuario);
+router.delete("/usuarios/:usuarioId",         jwtAuth, requireRole("administrador"), desactivarUsuario);
+router.post(  "/usuarios/:usuarioId/reset",   jwtAuth, requireRole("administrador"), resetPassword);
+
+// ── Seeds (solo desarrollo) ───────────────────────────────────
+router.post("/seed",       seedUsuarios);
+router.post("/seed-todos", seedTodos);
 
 module.exports = router;
