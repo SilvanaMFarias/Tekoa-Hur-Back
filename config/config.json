@@ -1,23 +1,26 @@
 {
   "development": {
-    "username": "postgres",
-    "password": "2850",
-    "database": "tekoadb",
-    "host": "127.0.0.1",
-    "dialect": "postgres"
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": false
+    },
+    "logging": false
   },
   "test": {
-    "username": "postgres",
-    "password": "2850",
-    "database": "tekoadb_test",
-    "host": "127.0.0.1",
-    "dialect": "postgres"
+    "use_env_variable": "DATABASE_URL_TEST",
+    "dialect": "postgres",
+    "logging": false
   },
   "production": {
-    "username": "postgres",
-    "password": "2850",
-    "database": "tekoadb",
-    "host": "127.0.0.1",
-    "dialect": "postgres"
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    },
+    "logging": false
   }
 }

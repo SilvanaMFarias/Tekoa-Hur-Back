@@ -1,40 +1,38 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi    = require("swagger-ui-express");
 
 const options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: "3.0.0",
     info: {
-      title: 'API - Tekoa Hur Back',
-      version: '1.0.0',
-      description: 'Documentación de la API del sistema académico Tekoa-Hur',
-      contact: {
-        name: 'Soporte',
-        email: 'soporte@tekoahur.com'
-      },
+      title:       "API — Tekoá-Hur",
+      version:     "1.0.0",
+      description: "Sistema académico de control de asistencias mediante QR.\n\n## Autenticación\nJWT Bearer Token — se configura automáticamente al cargar la página.\n\n## Roles\n- `alumno` — puede leer QR y ver su propio historial\n- `docente` — puede generar QR y ver asistencias de sus comisiones\n- `administrador` — acceso total al sistema",
+      contact: { name: "Soporte Tekoá-Hur", email: "soporte@tekoahur.com" },
     },
     components: {
       securitySchemes: {
-        basicAuth: {
-          type: 'http',
-          scheme: 'basic',   // 👈 CORREGIDO (antes estaba mal escrito como "sheme")
+        bearerAuth: {
+          type: "http", scheme: "bearer", bearerFormat: "JWT",
+          description: "Token JWT — configurado automáticamente al cargar la página",
         },
       },
     },
-    security: [
-      {
-        basicAuth: [],       // 👈 Esto aplica Basic Auth a todos los endpoints
-      },
-    ],
-    servers: [
-      {
-        url: 'http://localhost:3001',
-        description: 'Servidor de desarrollo'
-      },
-    ],
+    security: [{ bearerAuth: [] }],
+    servers: [{ url: "http://localhost:3001", description: "Desarrollo local" }],
   },
-  apis: ['./routes/*.js', './models/*.js'], // Documenta tus rutas y modelos
+  apis: ["./routes/*.js", "./models/*.js"],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
-module.exports = { swaggerUi, swaggerSpec };
+
+const swaggerUiOptions = {
+  docExpansion:           "none",
+  displayRequestDuration: true,
+  operationsSorter:       "method",
+  persistAuthorization:   true,
+  // Script servido como archivo estático en /public/swagger-autologin.js
+  customJs:               "/swagger-autologin.js",
+};
+
+module.exports = { swaggerUi, swaggerSpec, swaggerUiOptions };

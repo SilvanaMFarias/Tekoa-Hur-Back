@@ -1,54 +1,184 @@
 // ============================================================
 // routes/asistencias.js
 // ============================================================
-// CAMBIO: agrega POST /confirmar-dia
-//   → El docente cierra el QR del día y guarda correcciones manuales
-//   → Recibe la lista completa de alumnos con su estado final (P/A)
-//   → Crea los AUSENTES que no escanearon y actualiza los que cambiaron
-//   → Cierra el rtoken del aula para que nadie más pueda escanear
-// ============================================================
 
 const express    = require("express");
 const router     = express.Router();
 const { Op }     = require("sequelize");
-const asyncHandler = require("../middleware/asyncHandler");
+const asyncHandler           = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateAsistencia     = require("../middleware/validateAsistencia");
 const asistenciaController   = require("../controllers/asistenciaController");
-const { Asistencia, Aula, Horario, Matricula, Estudiante, Comision } = require("../models");
 
-// Rutas existentes
+// Importar modelos una sola vez al inicio del archivo
+const {
+  Asistencia, Aula, Horario, Matricula,
+  Estudiante, Comision, Profesor,
+} = require("../models");
+
+// ── GET /api/asistencias ─────────────────────────────────────
 router.get("/",    asyncHandler(asistenciaController.getAll));
 router.get("/:id", asyncHandler(asistenciaController.getById));
+
+// ── POST /api/asistencias ────────────────────────────────────
 router.post("/",
   validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
   validateAsistencia,
   asistenciaController.create
 );
-router.put("/:id",  validateAsistencia, asistenciaController.update);
+
+router.put("/:id",    validateAsistencia, asistenciaController.update);
 router.delete("/:id", asyncHandler(asistenciaController.delete));
+
+// ── POST /api/asistencias/registrar-desde-qr ─────────────────
+/**
+ * @swagger
+ * /api/asistencias/registrar-desde-qr:
+ *   post:
+ *     summary: Registra asistencia desde un escaneo de QR
+ *     tags: [Asistencias]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tipoUsuario, usuarioId, aulaId, rtoken]
+ *             properties:
+ *               tipoUsuario: { type: string, enum: [ESTUDIANTE, PROFESOR] }
+ *               usuarioId:   { type: string, description: "DNI del usuario" }
+ *               aulaId:      { type: string, format: uuid }
+ *               rtoken:      { type: string }
+ *     responses:
+ *       201: { description: Asistencia registrada }
+ *       403: { description: QR inválido o usuario no pertenece }
+ *       409: { description: Ya registrado hoy }
+ */
 router.post("/registrar-desde-qr", asyncHandler(asistenciaController.registrarDesdeQR));
 
+// ── POST /api/asistencias/docente-presente ───────────────────
+/**
+ * @swagger
+ * /api/asistencias/docente-presente:
+ *   post:
+ *     summary: El docente registra su presencia sin QR
+ *     description: |
+ *       Registra la asistencia del docente logueado directamente, sin escanear QR.
+ *       Valida que sea titular de la comisión y que haya horario activo ahora.
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [comisionId]
+ *             properties:
+ *               comisionId: { type: string, format: uuid }
+ *     responses:
+ *       201: { description: Presencia registrada }
+ *       400: { description: No hay clase activa ahora }
+ *       403: { description: No es titular de la comisión }
+ *       409: { description: Ya registró hoy }
+ */
+router.post("/docente-presente", async (req, res) => {
+  try {
+    const { comisionId } = req.body;
+    if (!comisionId) {
+      return res.status(400).json({ message: "comisionId es requerido." });
+    }
+
+    const now          = new Date();
+    const fecha        = now.toISOString().split("T")[0];
+    const horaRegistro = now.toTimeString().slice(0, 5);
+    const dias         = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+    const nombreDia    = dias[now.getDay()];
+
+    const comision = await Comision.findByPk(comisionId, {
+      include: [{ model: Profesor, as: "profesor" }],
+    });
+    if (!comision) {
+      return res.status(404).json({ message: "Comisión no encontrada." });
+    }
+
+    const dniDocente = req.usuario?.dni;
+    if (comision.profesor && comision.profesor.dni !== String(dniDocente).trim()) {
+      return res.status(403).json({ message: "No sos el docente titular de esta comisión." });
+    }
+
+    const horario = await Horario.findOne({
+      where: {
+        comisionId,
+        diaSemana:  nombreDia,
+        horaDesde:  { [Op.lte]: horaRegistro },
+        horaHasta:  { [Op.gte]: horaRegistro },
+      },
+    });
+    if (!horario) {
+      return res.status(400).json({
+        message: `No hay clase activa ahora (${nombreDia} ${horaRegistro}).`,
+      });
+    }
+
+    const yaExiste = await Asistencia.findOne({
+      where: { usuarioId: String(dniDocente).trim(), comisionId, fecha },
+    });
+    if (yaExiste) {
+      return res.status(409).json({ message: "Ya registraste tu presencia hoy en esta comisión." });
+    }
+
+    const nueva = await Asistencia.create({
+      usuarioId:    String(dniDocente).trim(),
+      tipoUsuario:  "PROFESOR",
+      comisionId,
+      fecha,
+      horaRegistro,
+      estado:       "PRESENTE",
+    });
+
+    return res.status(201).json({
+      message: "✅ Presencia registrada correctamente.",
+      data:    nueva,
+    });
+
+  } catch (err) {
+    console.error("Error docente-presente:", err);
+    return res.status(500).json({ message: "Error interno del servidor." });
+  }
+});
+
 // ── POST /api/asistencias/confirmar-dia ──────────────────────
-// El docente confirma la lista del día.
-//
-// Body:
-// {
-//   comisionId: UUID,
-//   aulaId:     UUID,
-//   fecha:      "YYYY-MM-DD",
-//   asistencias: [
-//     { dni: "12345678", estado: "PRESENTE" | "AUSENTE" },
-//     ...  (un objeto por cada alumno matriculado)
-//   ]
-// }
-//
-// Lo que hace:
-//  1. Por cada alumno en la lista:
-//     - Si ya tiene registro ese día → actualiza estado si cambió
-//     - Si no tiene registro → crea uno con el estado indicado
-//  2. Cierra el rtoken del aula (nadie más puede escanear ese QR)
-// ─────────────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/asistencias/confirmar-dia:
+ *   post:
+ *     summary: Docente confirma la lista de asistencia del día
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [comisionId, fecha, asistencias]
+ *             properties:
+ *               comisionId:   { type: string, format: uuid }
+ *               aulaId:       { type: string, format: uuid }
+ *               fecha:        { type: string, format: date }
+ *               asistencias:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     dni:    { type: string }
+ *                     estado: { type: string, enum: [PRESENTE, AUSENTE] }
+ *     responses:
+ *       200: { description: Día confirmado }
+ */
 router.post("/confirmar-dia", async (req, res) => {
   try {
     const { comisionId, aulaId, fecha, asistencias } = req.body;
@@ -59,17 +189,14 @@ router.post("/confirmar-dia", async (req, res) => {
       });
     }
 
-    // Necesitamos la hora para los registros nuevos
     const horaRegistro = new Date().toTimeString().slice(0, 5);
-
-    let creados     = 0;
+    let creados      = 0;
     let actualizados = 0;
 
     for (const item of asistencias) {
       const { dni, estado } = item;
       if (!dni || !estado) continue;
 
-      // Buscar si ya existe registro para este alumno en esta fecha y comisión
       const existente = await Asistencia.findOne({
         where: {
           usuarioId:   String(dni).trim(),
@@ -80,13 +207,11 @@ router.post("/confirmar-dia", async (req, res) => {
       });
 
       if (existente) {
-        // Solo actualizar si el estado cambió (evitar writes innecesarios)
         if (existente.estado !== estado) {
           await existente.update({ estado });
           actualizados++;
         }
       } else {
-        // Crear registro nuevo (ausente o presente que el docente agregó)
         await Asistencia.create({
           usuarioId:    String(dni).trim(),
           tipoUsuario:  "ESTUDIANTE",
@@ -99,7 +224,6 @@ router.post("/confirmar-dia", async (req, res) => {
       }
     }
 
-    // Cerrar el rtoken del aula para que el QR de ese día expire
     if (aulaId) {
       await Aula.update(
         { rtoken: null, rtokenExpira: null },
@@ -121,12 +245,26 @@ router.post("/confirmar-dia", async (req, res) => {
 });
 
 // ── GET /api/asistencias/dia ─────────────────────────────────
-// Devuelve todos los matriculados de una comisión para una fecha,
-// con su estado en esa fecha (PRESENTE / AUSENTE / sin registro).
-// Útil para armar la grilla del día que ve el docente.
-//
-// Query: ?comisionId=UUID&fecha=YYYY-MM-DD
-// ─────────────────────────────────────────────────────────────
+/**
+ * @swagger
+ * /api/asistencias/dia:
+ *   get:
+ *     summary: Alumnos de una comisión con su estado de asistencia en un día
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: comisionId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: fecha
+ *         required: true
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200: { description: Lista de alumnos con estado del día }
+ */
 router.get("/dia", async (req, res) => {
   try {
     const { comisionId, fecha } = req.query;
@@ -134,35 +272,25 @@ router.get("/dia", async (req, res) => {
       return res.status(400).json({ message: "comisionId y fecha son requeridos" });
     }
 
-    // Todos los matriculados en la comisión
     const matriculas = await Matricula.findAll({
       where: { comisionId },
       include: [{ model: Estudiante, as: "estudiante" }],
     });
 
-    // Registros de asistencia ya existentes para esa fecha
     const registros = await Asistencia.findAll({
-      where: {
-        comisionId,
-        fecha,
-        tipoUsuario: "ESTUDIANTE",
-      },
+      where: { comisionId, fecha, tipoUsuario: "ESTUDIANTE" },
     });
 
-    // Map de dni → estado
     const estadoMap = {};
     for (const r of registros) {
       estadoMap[String(r.usuarioId)] = r.estado;
     }
 
-    // Construir lista con todos los matriculados y su estado del día
-    const lista = matriculas.map((m) => ({
-      dni:            m.estudianteDni,
+    const lista = matriculas.map(m => ({
+      dni:             m.estudianteDni,
       nombre_apellido: m.estudiante?.nombre_apellido ?? m.estudianteDni,
-      // Si no escaneó, por defecto AUSENTE
-      estado:         estadoMap[m.estudianteDni] ?? "AUSENTE",
-      // true si ya tiene registro (escaneó el QR)
-      escaneó:        !!estadoMap[m.estudianteDni],
+      estado:          estadoMap[m.estudianteDni] ?? "AUSENTE",
+      escaneó:         !!estadoMap[m.estudianteDni],
     }));
 
     return res.json({ fecha, comisionId, alumnos: lista });
@@ -173,83 +301,5 @@ router.get("/dia", async (req, res) => {
   }
 });
 
+// ✅ module.exports al final — todos los endpoints ya están registrados
 module.exports = router;
-// ── POST /api/asistencias/docente-presente ───────────────────
-// El docente registra su propia presencia sin necesidad de QR.
-// Requiere JWT válido con rol docente.
-// Solo valida día/hora y que sea titular de la comisión.
-// No requiere rtoken — el JWT es suficiente autenticación.
-router.post("/docente-presente", async (req, res) => {
-  try {
-    const { comisionId } = req.body;
-    if (!comisionId) {
-      return res.status(400).json({ message: "comisionId es requerido." });
-    }
-
-    const { Asistencia, Comision, Horario, Profesor } = require("../models");
-    const { Op } = require("sequelize");
-
-    const now          = new Date();
-    const fecha        = now.toISOString().split("T")[0];
-    const horaRegistro = now.toTimeString().slice(0, 5);
-    const dias         = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
-    const nombreDia    = dias[now.getDay()];
-
-    // Verificar que la comisión existe
-    const comision = await Comision.findByPk(comisionId, {
-      include: [{ model: Profesor, as: "profesor" }],
-    });
-    if (!comision) {
-      return res.status(404).json({ message: "Comisión no encontrada." });
-    }
-
-    // Verificar que el docente logueado es el titular
-    // req.usuario viene del middleware jwtAuth
-    const dniDocente = req.usuario?.dni;
-    if (comision.profesor && comision.profesor.dni !== String(dniDocente).trim()) {
-      return res.status(403).json({ message: "No sos el docente titular de esta comisión." });
-    }
-
-    // Verificar que hay horario activo ahora
-    const horario = await Horario.findOne({
-      where: {
-        comisionId,
-        diaSemana:  nombreDia,
-        horaDesde:  { [Op.lte]: horaRegistro },
-        horaHasta:  { [Op.gte]: horaRegistro },
-      },
-    });
-    if (!horario) {
-      return res.status(400).json({
-        message: `No hay clase activa ahora en esta comisión (${nombreDia} ${horaRegistro}).`,
-      });
-    }
-
-    // Evitar doble registro en el mismo día
-    const yaExiste = await Asistencia.findOne({
-      where: { usuarioId: String(dniDocente).trim(), comisionId, fecha },
-    });
-    if (yaExiste) {
-      return res.status(409).json({ message: "Ya registraste tu presencia hoy en esta comisión." });
-    }
-
-    // Crear asistencia del docente
-    const nueva = await Asistencia.create({
-      usuarioId:    String(dniDocente).trim(),
-      tipoUsuario:  "PROFESOR",
-      comisionId,
-      fecha,
-      horaRegistro,
-      estado:       "PRESENTE",
-    });
-
-    return res.status(201).json({
-      message: "✅ Presencia registrada correctamente.",
-      data:    nueva,
-    });
-
-  } catch (err) {
-    console.error("Error docente-presente:", err);
-    return res.status(500).json({ message: "Error interno del servidor." });
-  }
-});

@@ -6,7 +6,7 @@ const cors        = require("cors");
 const session     = require("express-session");
 const bodyParser  = require("body-parser");
 const sequelize   = require("./config/database");
-const { swaggerUi, swaggerSpec } = require("./swagger");
+const { swaggerUi, swaggerSpec, swaggerUiOptions } = require("./swagger");
  
 const errorHandler = require("./middleware/errorHandlers");
 const notFound     = require("./middleware/notFound");
@@ -122,7 +122,7 @@ app.use("/api/estudiantes", jwtAuth, alumnoOAdmin, estudiantesRoutes);
 app.use("/api/importar", jwtAuth, requireRole("administrador"), importarRoutes);
  
 // ── Swagger ──────────────────────────────────────────────────
-app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api-docs", checkAuth, swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 app.get("/", (req, res) => res.send("Servidor iniciado correctamente 🚀"));
  
 app.use(notFound);
