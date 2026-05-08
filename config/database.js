@@ -1,7 +1,7 @@
 const { Sequelize } = require("sequelize");
 
 const dbUrl = new URL(
-  process.env.DATABASE_URL || "postgres://postgres:postgres123@localhost:5432/tekoadb"
+  process.env.DATABASE_URL || "postgres://postgres:postgres123@localhost:5432/tekoadb1"
 );
 
 const sequelize = new Sequelize({
