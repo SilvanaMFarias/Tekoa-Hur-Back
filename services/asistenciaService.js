@@ -50,9 +50,8 @@ class AsistenciaService extends BaseService {
     } = data;
 
     if (!tipoUsuario || !usuarioId || !aulaId || !rtoken) {
-      throw new AppError(
-        "Faltan campos: tipoUsuario, usuarioId, aulaId, rtoken",
-        400
+      throw AppError.badRequest(
+        "Faltan campos: tipoUsuario, usuarioId, aulaId, rtoken"
       );
     }
 
@@ -62,24 +61,10 @@ class AsistenciaService extends BaseService {
 
     const aula = await Aula.findByPk(aulaId);
 
-    if (!aula || aula.rtoken !== rtoken) {
-      throw new AppError(
+    if (aula?.rtoken !== rtoken) {
+      throw AppError.forbidden(
         "QR inválido o expirado",
-        403
-      );
-    }
-
-    if (!aula.rtoken || aula.rtoken !== rtoken) {
-        throw new AppError(
-          "QR inválido o expirado",
-          403
-        );
-    }
-
-    if (!aula.rtoken) {
-      throw new AppError(
-        "QR inválido o expirado",
-        403
+        "INVALID_QR"
       );
     }
 
@@ -92,9 +77,9 @@ class AsistenciaService extends BaseService {
         rtokenExpira: null,
       });
 
-      throw new AppError(
+      throw AppError.forbidden(
         "El QR expiró",
-        403
+        "QR_EXPIRED"
       );
     }
 
@@ -113,9 +98,9 @@ class AsistenciaService extends BaseService {
         now < new Date(fechaInicio) ||
         now > new Date(fechaFin)
       ) {
-        throw new AppError(
+        throw AppError.forbidden(
           "QR fuera de su ventana horaria",
-          403
+          "QR_OUTSIDE_WINDOW"
         );
       }
     }
@@ -150,9 +135,9 @@ class AsistenciaService extends BaseService {
     });
 
     if (!horario) {
-      throw new AppError(
+      throw AppError.badRequest(
         `No hay clase activa en esta aula (${nombreDia(now)} ${horaRegistro})`,
-        400
+        "NO_ACTIVE_CLASS"
       );
     }
 
@@ -173,9 +158,9 @@ class AsistenciaService extends BaseService {
       });
 
       if (!matricula) {
-        throw new AppError(
+        throw AppError.forbidden(
           "No pertenecés a esta comisión",
-          403
+          "NOT_ENROLLED"
         );
       }
     } else if (tipo === "PROFESOR") {
@@ -185,15 +170,15 @@ class AsistenciaService extends BaseService {
         profe &&
         profe.dni !== String(usuarioId).trim()
       ) {
-        throw new AppError(
+        throw AppError.forbidden(
           "No sos el docente titular de esta comisión",
-          403
+          "NOT_COMMISSION_TEACHER"
         );
       }
     } else {
-      throw new AppError(
+      throw AppError.badRequest(
         'tipoUsuario debe ser "ESTUDIANTE" o "PROFESOR"',
-        400
+        "INVALID_USER_TYPE"
       );
     }
 
@@ -210,9 +195,9 @@ class AsistenciaService extends BaseService {
     });
 
     if (yaExiste) {
-      throw new AppError(
+      throw AppError.conflict(
         "Ya registraste tu asistencia hoy",
-        409
+        "ATTENDANCE_ALREADY_REGISTERED"
       );
     }
 
