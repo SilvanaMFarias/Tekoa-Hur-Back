@@ -36,6 +36,11 @@ module.exports = (sequelize) => {
         allowNull: false,
         comment: "Hash bcrypt — nunca guardar en texto plano",
       },
+      email: { 
+      type: DataTypes.STRING, 
+      allowNull: true,
+      validate: { isEmail: true }
+      },
       rol: {
         type: DataTypes.ENUM("alumno", "docente", "administrador"),
         allowNull: false,
