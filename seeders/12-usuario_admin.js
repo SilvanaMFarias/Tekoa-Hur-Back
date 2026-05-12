@@ -22,6 +22,7 @@ module.exports = {
           nombre: 'Administrador Sistema',
           password: passwordHash,
           rol: 'administrador',
+          email: 'usuario@mail.com',
           referenciaId: null,
           activo: true,
           createdAt: new Date(),

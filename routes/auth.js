@@ -14,6 +14,23 @@ const {
   seedUsuarios, seedTodos,
 } = require("../controllers/authController");
 
+/**
+ * Recuperación de contraseña
+ */
+const {
+  forgotPassword,
+  //Ya existe resetPassword en authController, pero es para que el admin resetee al DNI del usuario.
+  // Este es para que el usuario resetee su propia contraseña.
+  resetPassword: resetPasswordRecovery,
+} = require("../controllers/passwordRecoveryController");
+
+/**
+ * Middleware validación reset password
+ */
+const validateResetPassword = require(
+  "../middleware/validateResetPassword"
+);
+
 // ── Validaciones reutilizables ───────────────────────────────
 
 // Valida que el DNI tenga formato argentino (7-8 dígitos)
@@ -122,6 +139,64 @@ router.get("/me", jwtAuth, me);
  *       401: { description: Contraseña actual incorrecta }
  */
 router.put("/cambiar-password", jwtAuth, cambiarPassword);
+
+
+// ── Recuperación de contraseña ───────────────────────────────
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Solicitar recuperación de contraseña
+ *     description: Genera un token temporal y envía instrucciones al email del usuario.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "usuario@mail.com"
+ *     responses:
+ *       200:
+ *         description: Si el email existe, se enviaron instrucciones.
+ *       400:
+ *         description: Email requerido.
+ */
+router.post("/forgot-password", forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablecer contraseña mediante token
+ *     description: Permite establecer una nueva contraseña usando el token recibido por email.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: "abc123token"
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: "NuevaPassword123"
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente.
+ *       400:
+ *         description: Token inválido o expirado.
+ */
+router.post("/reset-password", validateResetPassword, resetPasswordRecovery);
 
 // ── Gestión de usuarios (solo administrador) ─────────────────
 
