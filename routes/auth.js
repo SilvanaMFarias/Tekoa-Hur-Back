@@ -178,15 +178,18 @@ router.post("/forgot-password", forgotPassword);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *          application/json:
  *           schema:
  *             type: object
- *             required: [token, newPassword]
+ *             required: [email, token, password]
  *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "usuario@mail.com"
  *               token:
  *                 type: string
  *                 example: "abc123token"
- *               newPassword:
+ *               password:
  *                 type: string
  *                 minLength: 6
  *                 example: "NuevaPassword123"

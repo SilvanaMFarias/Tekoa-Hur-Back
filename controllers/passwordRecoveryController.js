@@ -1,32 +1,50 @@
-const bcrypt = require("bcryptjs");
-const { Usuario } = require("../models");
 const { generateResetToken,} = require("../utils/tokenGenerator");
 
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+
+const { Usuario } = require("../models");
+
 const { sendRecoveryEmail,} = require("../services/emailService");
+
 const SALT = 10;
+
+const resetPasswordTemplate = require("../templates/resetPasswordTemplate");
 
 /**
  * POST /api/auth/forgot-password
  */
-exports.forgotPassword = async (req, res) => {
+exports.forgotPassword = async (
+  req,
+  res
+) => {
   try {
+
     const { email } = req.body;
 
+    /**
+     * Validar email
+     */
     if (!email) {
       return res.status(400).json({
-        message: "El email es requerido.",
+        message:
+          "El email es requerido.",
       });
     }
 
-    const usuario = await Usuario.findOne({
-      where: {
-        email: String(email).trim(),
-        activo: true,
-      },
-    });
+    /**
+     * Buscar usuario
+     */
+    const usuario =
+      await Usuario.findOne({
+        where: {
+          email: String(email).trim(),
+          activo: true,
+        },
+      });
 
     /**
-     * Nunca revelar si existe el email
+     * Nunca revelar existencia
      */
     if (!usuario) {
       return res.status(200).json({
@@ -36,28 +54,65 @@ exports.forgotPassword = async (req, res) => {
     }
 
     /**
-     * Generar token
+     * Generar token seguro
      */
     const resetToken = generateResetToken();
 
     /**
+     * Hashear token
+     */
+    const hashedToken =
+      await bcrypt.hash(
+        resetToken,
+        SALT
+      );
+
+    /**
      * Expiración: 1 hora
      */
-    const expiration = new Date(
-      Date.now() + 60 * 60 * 1000
-    );
+    const expiration =
+      new Date(
+        Date.now() +
+        60 * 60 * 1000
+      );
 
-    usuario.resetPasswordToken = resetToken;
-    usuario.resetPasswordExpires = expiration;
+    /**
+     * Guardar token
+     */
+    usuario.resetPasswordToken =
+      hashedToken;
+
+    usuario.resetPasswordExpires =
+      expiration;
 
     await usuario.save();
 
     /**
-     * Enviar email
+     * Enviar email mock
      */
+    //await sendRecoveryEmail(
+    //  usuario.email,
+    //  resetToken
+    //);
+
+    /**
+     * Enviar email real con link y template
+     */
+    const resetLink =
+      `${process.env.FRONTEND_URL}` +
+      `/reset-password?token=${resetToken}` +
+      `&email=${usuario.email}`;
+
+    const html =
+      resetPasswordTemplate(
+        resetLink,
+        usuario.nombre
+    );
+
     await sendRecoveryEmail(
       usuario.email,
-      resetToken
+      resetLink,
+      html
     );
 
     return res.status(200).json({
@@ -66,10 +121,15 @@ exports.forgotPassword = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error forgotPassword:", err);
+
+    console.error(
+      "Error forgotPassword:",
+      err
+    );
 
     return res.status(500).json({
-      message: "Error interno del servidor.",
+      message:
+        "Error interno del servidor.",
     });
   }
 };
@@ -77,33 +137,44 @@ exports.forgotPassword = async (req, res) => {
 /**
  * POST /api/auth/reset-password
  */
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = async (
+  req,
+  res
+) => {
+
   try {
-    const { token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
-      return res.status(400).json({
-        message: "Token y contraseña son requeridos.",
-      });
-    }
+    const {
+      email,
+      token,
+      password,
+    } = req.body;
 
-    if (newPassword.length < 6) {
+    /**
+     * Validar datos
+     */
+    if (!email || !token) {
       return res.status(400).json({
         message:
-          "La contraseña debe tener al menos 6 caracteres.",
+          "Email y token son requeridos.",
       });
     }
 
-    const usuario = await Usuario.findOne({
-      where: {
-        resetPasswordToken: token,
-        activo: true,
-      },
-    });
+    /**
+     * Buscar usuario
+     */
+    const usuario =
+      await Usuario.findOne({
+        where: {
+          email: String(email).trim(),
+          activo: true,
+        },
+      });
 
     if (!usuario) {
       return res.status(400).json({
-        message: "Token inválido.",
+        message:
+          "Token inválido.",
       });
     }
 
@@ -111,27 +182,49 @@ exports.resetPassword = async (req, res) => {
      * Validar expiración
      */
     if (
-      usuario.resetPasswordExpires &&
-      usuario.resetPasswordExpires < new Date()
+      !usuario.resetPasswordExpires ||
+      usuario.resetPasswordExpires <
+        new Date()
     ) {
       return res.status(400).json({
-        message: "Token expirado.",
+        message:
+          "Token expirado.",
       });
     }
 
     /**
-     * Hash password
+     * Comparar token
      */
-    usuario.password = await bcrypt.hash(
-      String(newPassword),
-      SALT
-    );
+    const isValidToken =
+      await bcrypt.compare(
+        token,
+        usuario.resetPasswordToken
+      );
+
+    if (!isValidToken) {
+      return res.status(400).json({
+        message:
+          "Token inválido.",
+      });
+    }
+
+    /**
+     * Hashear nueva password
+     */
+    usuario.password =
+      await bcrypt.hash(
+        String(password),
+        SALT
+      );
 
     /**
      * Limpiar token
      */
-    usuario.resetPasswordToken = null;
-    usuario.resetPasswordExpires = null;
+    usuario.resetPasswordToken =
+      null;
+
+    usuario.resetPasswordExpires =
+      null;
 
     await usuario.save();
 
@@ -141,10 +234,15 @@ exports.resetPassword = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error resetPassword:", err);
+
+    console.error(
+      "Error resetPassword:",
+      err
+    );
 
     return res.status(500).json({
-      message: "Error interno del servidor.",
+      message:
+        "Error interno del servidor.",
     });
   }
 };

@@ -7,12 +7,13 @@ const SALT = 10;
 
 // ─── Helper: crear usuario si no existe (password = DNI) ─────
 // Se usa tanto en la importación como en la sincronización final.
-async function crearUsuarioSiNoExiste(dni, nombre, rol) {
+async function crearUsuarioSiNoExiste(dni, nombre, rol, email) {
   const [, created] = await Usuario.findOrCreate({
     where:    { dni },
     defaults: {
       dni,
       nombre,
+      email,
       password:     await bcrypt.hash(dni, SALT),
       rol,
       referenciaId: dni,
@@ -79,13 +80,14 @@ function parsearExcel(buffer) {
       cod_comision:   String(f[0]).trim(),
       docente_nombre: String(f[1]).trim(),
       docente_dni:    String(f[2]).trim(),
-      horaDesde:      excelTimeToString(f[3]),
-      horaHasta:      excelTimeToString(f[4]),
-      espacio:        String(f[5]).trim(),
-      edificio:       String(f[6]).trim(),
-      actividad:      String(f[7]).trim(),
-      dia:            normalizarDia(String(f[8]).trim()),
-    });
+      docente_email:  String(f[3]).trim(),
+      horaDesde:      excelTimeToString(f[4]),
+      horaHasta:      excelTimeToString(f[5]),
+      espacio:        String(f[6]).trim(),
+      edificio:       String(f[7]).trim(),
+      actividad:      String(f[8]).trim(),
+      dia:            normalizarDia(String(f[9]).trim()),
+});
   }
 
   const estudiantes = [];
@@ -95,10 +97,11 @@ function parsearExcel(buffer) {
     estudiantes.push({
       nombre_apellido: String(f[0]).trim(),
       dni:             String(f[1]).trim(),
-      materia:         String(f[2]).trim(),
-      cod_comision:    String(f[3]).trim(),
-      docente:         String(f[4]).trim(),
-    });
+      email:           String(f[2]).trim(),
+      materia:         String(f[3]).trim(),
+      cod_comision:    String(f[4]).trim(),
+      docente:         String(f[5]).trim(),
+});
   }
 
   return { comisiones, estudiantes };
@@ -191,7 +194,7 @@ exports.confirmar = async (req, res) => {
         profesorMap[c.docente_dni] = prof;
         resultados.profesores++;
 
-        const creado = await crearUsuarioSiNoExiste(c.docente_dni, c.docente_nombre, "docente");
+        const creado = await crearUsuarioSiNoExiste(c.docente_dni, c.docente_nombre, "docente", c.docente_email);
         if (creado) resultados.usuariosCreados++;
       }
     }
@@ -257,7 +260,7 @@ exports.confirmar = async (req, res) => {
       });
       if (estCreated) resultados.estudiantes++;
 
-      const creado = await crearUsuarioSiNoExiste(e.dni, e.nombre_apellido, "alumno");
+      const creado = await crearUsuarioSiNoExiste(e.dni, e.nombre_apellido, "alumno", e.email);
       if (creado) resultados.usuariosCreados++;
 
       const comision = comisionMap[e.cod_comision];
