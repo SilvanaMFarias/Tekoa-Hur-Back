@@ -1,15 +1,15 @@
 const validateResetPassword = ( req, res, next) => {
 
-  const { newPassword } = req.body;
+  const { password } = req.body;
 
-  if (!newPassword) {
+  if (!password) {
     return res.status(400).json({
       message:
         "La nueva contraseña es requerida.",
     });
   }
 
-  if (newPassword.length < 6) {
+  if (password.length < 6) {
     return res.status(400).json({
       message:
         "La contraseña debe tener al menos 6 caracteres.",
