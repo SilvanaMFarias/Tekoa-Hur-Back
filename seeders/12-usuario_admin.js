@@ -1,7 +1,7 @@
 'use strict';
 
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 const SALT = 10;
 
@@ -17,7 +17,7 @@ module.exports = {
     if (usuario.length === 0) {
       await queryInterface.bulkInsert('usuarios', [
         {
-          usuarioId: uuidv4(),
+          usuarioId: randomUUID(),
           dni: '00000001',
           nombre: 'Administrador Sistema',
           password: passwordHash,
