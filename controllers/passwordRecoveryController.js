@@ -9,6 +9,8 @@ const { sendRecoveryEmail,} = require("../services/emailService");
 
 const SALT = 10;
 
+const resetPasswordTemplate = require("../templates/resetPasswordTemplate");
+
 /**
  * POST /api/auth/forgot-password
  */
@@ -88,9 +90,29 @@ exports.forgotPassword = async (
     /**
      * Enviar email mock
      */
+    //await sendRecoveryEmail(
+    //  usuario.email,
+    //  resetToken
+    //);
+
+    /**
+     * Enviar email real con link y template
+     */
+    const resetLink =
+      `${process.env.FRONTEND_URL}` +
+      `/reset-password?token=${resetToken}` +
+      `&email=${usuario.email}`;
+
+    const html =
+      resetPasswordTemplate(
+        resetLink,
+        usuario.nombre
+    );
+
     await sendRecoveryEmail(
       usuario.email,
-      resetToken
+      resetLink,
+      html
     );
 
     return res.status(200).json({

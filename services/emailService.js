@@ -1,21 +1,18 @@
-/**
- * Servicio de emails
- * implementar nodemailer
- */
+const transporter = require("../config/mailer");
 
 const sendRecoveryEmail = async (
   email,
-  token
+  resetLink,
+  html
 ) => {
 
-  const resetLink =
-    `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
-  console.log("=================================");
-  console.log("EMAIL RECUPERACIÓN");
-  console.log("DESTINO:", email);
-  console.log("LINK:", resetLink);
-  console.log("=================================");
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject:
+      "Recuperación de contraseña - Tekoa",
+    html,
+  });
 
   return true;
 };
