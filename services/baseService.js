@@ -1,3 +1,5 @@
+// services/baseService.js
+
 const { sequelize } = require("../models");
 
 class BaseService {
@@ -7,17 +9,33 @@ class BaseService {
     this.primaryKey = model.primaryKeyAttribute || "id";
   }
 
-  getAll() {
-    return this.model.findAll({ include: this.include });
+  getAll(options = {}) {
+    return this.model.findAll({
+      include: this.include,
+      ...options,
+    });
   }
 
-  getById(id) {
-    return this.model.findByPk(id, { include: this.include });
+  getById(id, options = {}) {
+    return this.model.findByPk(id, {
+      include: this.include,
+      ...options,
+    });
   }
 
-  async create(data) {
+  findOne(options = {}) {
+    return this.model.findOne({
+      include: this.include,
+      ...options,
+    });
+  }
+
+  async create(data, options = {}) {
     return sequelize.transaction(async (transaction) => {
-      return this.model.create(data, { transaction });
+      return this.model.create(data, {
+        transaction,
+        ...options,
+      });
     });
   }
 
@@ -27,13 +45,17 @@ class BaseService {
         where: { [this.primaryKey]: id },
         transaction,
       });
+
       return updated;
     });
   }
 
   async delete(id) {
     return sequelize.transaction(async (transaction) => {
-      return this.model.destroy({ where: { [this.primaryKey]: id }, transaction });
+      return this.model.destroy({
+        where: { [this.primaryKey]: id },
+        transaction,
+      });
     });
   }
 }
