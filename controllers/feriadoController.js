@@ -1,9 +1,10 @@
-const BaseController = require('./baseController');
-const { Feriado } = require('../models');
+const BaseController = require("./baseController");
+
+const feriadoService = require("../services/feriadoService");
 
 class FeriadoController extends BaseController {
   constructor() {
-    super(Feriado);
+    super(feriadoService);
   }
 }
 
