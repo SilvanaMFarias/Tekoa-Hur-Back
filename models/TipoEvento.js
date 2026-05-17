@@ -3,6 +3,12 @@ const { Model, DataTypes } = require('sequelize');
 class TipoEvento extends Model {
   static associate(models) {
     // Para futuras relaciones (ej: eventos de clase)
+    
+    //Asociacion con feriados
+    TipoEvento.hasMany(models.Feriado, {
+      foreignKey: 'tipoEventoId',
+      as: 'feriados'
+    });
   }
 }
 
