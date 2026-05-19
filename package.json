@@ -6,8 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+    "test": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --runInBand",
+    "test:watch": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --watch"
+},
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -31,9 +32,12 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
+    "jest": "^30.4.2",
     "nodemon": "^3.1.14",
-    "sequelize-cli": "^6.6.5"
+    "sequelize-cli": "^6.6.5",
+    "supertest": "^7.2.2"
   },
   "repository": {
     "type": "git",
