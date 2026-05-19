@@ -38,8 +38,8 @@ module.exports = (sequelize) => {
       },
       email: { 
         type: DataTypes.STRING, 
-        allowNull: false,
-        unique: true,
+        allowNull: true,
+        unique: false,
         validate: { isEmail: true }
       },
         resetPasswordToken: {
@@ -55,6 +55,19 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: "alumno",
       },
+      estado: {
+        type: DataTypes.ENUM(
+          "PRESENTE",
+          "AUSENTE",
+          "TARDE",
+          "JUSTIFICADA",
+          "PARO",
+          "FERIADO",
+          "CANCELACION"
+        ),
+        allowNull: false,
+        defaultValue: "AUSENTE",},
+
       referenciaId: {
         type: DataTypes.STRING,
         allowNull: true,
