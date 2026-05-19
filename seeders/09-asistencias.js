@@ -8,16 +8,16 @@ module.exports = {
       {
         asistenciaId: randomUUID(),
 
-        fecha: '2026-04-22',
+        fecha: '2026-05-08',
 
         tipoUsuario: 'ESTUDIANTE',
-        usuarioId: '77777777',
+        usuarioId: '11111111',
 
-        horaRegistro: '16:07:00',
+        horaRegistro: '18:02:00',
 
         estado: 'PRESENTE',
 
-        comisionId: '55555555-5555-5555-5555-555555555555',
+        comisionId: '4aa06cd3-7478-4967-9ce6-428d9f150925',
 
         createdAt: new Date(),
         updatedAt: new Date()
