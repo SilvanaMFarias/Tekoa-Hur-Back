@@ -50,6 +50,32 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+
+      /**
+       * Flag de cambio obligatorio de contraseña.
+       *
+       * Cuándo se pone en true:
+       *  - Al crear un usuario nuevo (alta manual o por seed/Excel).
+       *  - Al resetear la contraseña desde el panel de administrador
+       *    (porque la nueva contraseña pasa a ser el DNI = inseguro).
+       *
+       * Cuándo se pone en false:
+       *  - Cuando el propio usuario cambia su contraseña por una
+       *    que cumple la política de seguridad (≥8 chars, mayúscula,
+       *    carácter especial).
+       *
+       * Cómo lo usa el frontend:
+       *  - Al hacer login, el backend incluye este flag en el payload
+       *    JWT y en la respuesta. Si viene en true, el frontend
+       *    redirige automáticamente a /cambio-obligatorio en lugar de
+       *    permitir el acceso normal a la aplicación.
+       */
+      cambioPasswordObligatorio: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+        comment: "Si es true, el usuario debe cambiar su clave antes de poder operar.",
+      },
       rol: {
         type: DataTypes.ENUM("alumno", "docente", "administrador"),
         allowNull: false,
