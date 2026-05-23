@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "test": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --watch"
-},
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -24,7 +24,7 @@
     "nodemailer": "^8.0.7",
     "pg": "^8.21.0",
     "pg-hstore": "^2.3.4",
-    "qs": "^6.15.1",
+    "qs": "^6.15.2",
     "sequelize": "^6.37.8",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
