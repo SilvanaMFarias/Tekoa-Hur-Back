@@ -1,0 +1,20 @@
+// ============================================================
+// .sequelizerc
+// ============================================================
+// Le dice a sequelize-cli dónde están las carpetas del proyecto.
+// SIN este archivo, el CLI busca rutas por default que no coinciden
+// con la estructura de Tekoá-Hur y no logra leer las migraciones
+// ni la config.
+//
+// Usar siempre con dotenv para que cargue el .env:
+//   npx dotenv -e .env -- sequelize-cli db:migrate
+// ============================================================
+
+const path = require("path");
+
+module.exports = {
+  config: path.resolve("config", "config.json"),
+  "models-path": path.resolve("models"),
+  "seeders-path": path.resolve("seeders"),
+  "migrations-path": path.resolve("migrations"),
+};

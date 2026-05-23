@@ -1,17 +1,16 @@
 // ============================================================
 // models/Aula.js
 // ============================================================
-// CAMBIOS:
-//  1. Se agregan asociaciones con AulaAtributos (1:1) y EspacioQR
-//     (1:N, aunque en la práctica solo 1 esté activo a la vez).
-//  2. Los campos rtoken y rtokenExpira quedan como DEPRECATED
-//     (ya no se usan para nada): el QR de asistencia ahora vive en
-//     Comision. Los dejamos para no perder datos viejos durante la
-//     migración. Se pueden eliminar en una futura migración cuando
-//     el sistema esté estable.
+// Estado actual: tarjeta R1-01 (solo cambios de Comision).
 //
-// Recordar correr la migración para crear las tablas nuevas:
-//   npx sequelize-cli db:migrate
+// En esta tarjeta los únicos cambios sobre Aula son:
+//   - Marcar rtoken y rtokenExpira como DEPRECATED (siguen
+//     existiendo, pero ya no se usan para el QR de asistencia).
+//
+// Las asociaciones con AulaAtributos y EspacioQR vienen DESPUÉS,
+// en las tarjetas R2-01 y R2-02. NO se agregan acá todavía
+// porque esos modelos no existen aún y Sequelize crashearía al
+// intentar resolverlos al cargar.
 // ============================================================
 
 const { Model, DataTypes } = require("sequelize");
@@ -27,21 +26,18 @@ class Aula extends Model {
       as: "horarios",
     });
 
-    // ─── NUEVAS ASOCIACIONES ────────────────────────────────
-    // 1:1 con AulaAtributos. hasOne porque el aula es "padre"
-    // de su fila de atributos (la PK de la otra tabla es aulaId).
-    Aula.hasOne(models.AulaAtributos, {
-      foreignKey: "aulaId",
-      as: "atributos",
-    });
-
-    // 1:N con EspacioQR. Una aula puede tener histórico de QRs
-    // (algunos desactivados), pero a nivel de negocio solo uno
-    // activo a la vez (lo garantiza el índice parcial en EspacioQR).
-    Aula.hasMany(models.EspacioQR, {
-      foreignKey: "aulaId",
-      as: "espacioQRs",
-    });
+    // ─── ASOCIACIONES PENDIENTES (R2-01 y R2-02) ────────────
+    // No descomentar hasta que existan los modelos correspondientes.
+    //
+    // Aula.hasOne(models.AulaAtributos, {
+    //   foreignKey: "aulaId",
+    //   as: "atributos",
+    // });
+    //
+    // Aula.hasMany(models.EspacioQR, {
+    //   foreignKey: "aulaId",
+    //   as: "espacioQRs",
+    // });
   }
 }
 
@@ -62,7 +58,7 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      // Campo virtual: no va a la DB, se calcula al leer
+      // Campo virtual: no va a la DB, se calcula al leer.
       nombreCompleto: {
         type: DataTypes.VIRTUAL,
         get() {
@@ -75,11 +71,17 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      // ─── DEPRECATED: ya no se usa ───────────────────────────
+      // ─── DEPRECATED desde R1-01 ─────────────────────────────
       // El QR de asistencia se movió a Comision.qrToken porque
-      // ahora identifica la materia+comisión, no el aula.
-      // Se mantienen estas columnas SOLO por compatibilidad con
-      // datos viejos. Se podrán remover en una migración futura.
+      // ahora identifica la materia + comisión, no el aula.
+      //
+      // Estas dos columnas se mantienen SOLO por compatibilidad
+      // con datos viejos y QR físicos ya impresos en el formato
+      // anterior. El endpoint /api/qr/registrar legacy los sigue
+      // usando.
+      //
+      // Se podrán remover en una migración futura cuando el
+      // parque de QR del campus esté completamente migrado.
       rtoken: {
         type: DataTypes.STRING,
         allowNull: true,
