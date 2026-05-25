@@ -45,7 +45,7 @@ describe("PUT /api/auth/cambiar-password", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({
         passwordActual: "admin123",
-        passwordNueva: "nueva123",
+        passwordNueva: "NuevaPass123.",
       });
 
     expect(response.statusCode).toBe(200);
@@ -62,7 +62,7 @@ describe("PUT /api/auth/cambiar-password", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({
         passwordActual: "incorrecta",
-        passwordNueva: "nueva123",
+        passwordNueva: "NuevaPass123.",
       });
 
     expect(response.statusCode).toBe(401);

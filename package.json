@@ -1,16 +1,20 @@
 {
   "name": "tekoa-hur-back",
   "version": "1.0.0",
-  "description": "```bash\r node index.js\r ```\r Abre tu navegador en: http://localhost:3001/api-docs\r Se vera una interfaz interactiva con:\r - Los endpoints como GET y POST\r - La posibilidad de probarlos directamente desde la web",
+  "description": "Backend de Tekoa HUR",
   "main": "index.js",
+  "type": "commonjs",
+
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "cross-env NODE_ENV=test dotenv_config_path=.env.test node -r dotenv/config ./node_modules/jest/bin/jest.js --watch"
   },
+
   "author": "",
   "license": "ISC",
+
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
@@ -31,6 +35,7 @@
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5"
   },
+
   "devDependencies": {
     "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
@@ -39,14 +44,18 @@
     "sequelize-cli": "^6.6.5",
     "supertest": "^7.2.2"
   },
+
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SilvanaMFarias/Tekoa-Hur-Back.git"
+    "url": "git+https://github.com/tekoa-hur/Tekoa-Hur-Back.git"
   },
+
   "keywords": [],
-  "type": "commonjs",
+
   "bugs": {
-    "url": "https://github.com/SilvanaMFarias/Tekoa-Hur-Back/issues"
+    "url": "https://github.com/tekoa-hur/Tekoa-Hur-Back/issues"
   },
-  "homepage": "https://github.com/SilvanaMFarias/Tekoa-Hur-Back#readme"
+
+  "homepage": "https://github.com/tekoa-hur/Tekoa-Hur-Back#readme"
+
 }
