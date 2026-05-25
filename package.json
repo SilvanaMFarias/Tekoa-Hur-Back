@@ -58,9 +58,4 @@
 
   "homepage": "https://github.com/tekoa-hur/Tekoa-Hur-Back#readme",
 
-  "jest": {
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/test-db.js"
-    ]
-  }
 }
