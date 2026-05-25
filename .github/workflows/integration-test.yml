@@ -60,10 +60,10 @@ jobs:
           done
 
       - name: Run migrations
-        run: npx sequelize-cli db:migrate
+        run: npx dotenv -e .env.test -- sequelize-cli db:migrate
 
       - name: Run seeders
-        run: npx sequelize-cli db:seed:all
+        run: npx dotenv -e .env.test -- sequelize-cli db:seed:all
 
       - name: Run integration tests
-        run: npm test
+        run: npx dotenv -e .env.test -- npm test
