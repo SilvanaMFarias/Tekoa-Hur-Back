@@ -62,8 +62,8 @@ jobs:
       - name: Run migrations
         run: npx dotenv -e .env.test -- sequelize-cli db:migrate
 
-      - name: Run seeders
-        run: npx dotenv -e .env.test -- sequelize-cli db:seed:all
+#      - name: Run seeders
+#        run: npx dotenv -e .env.test -- sequelize-cli db:seed:all
 
       - name: Run integration tests
         run: npx dotenv -e .env.test -- npm test
