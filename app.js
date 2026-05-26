@@ -28,6 +28,7 @@ const asistenciasRoutes = require("./routes/asistencias");
 const feriadosRoutes    = require("./routes/feriados");
 const tipoEventosRoutes = require("./routes/tipoEventos");
 const qrRoutes          = require("./routes/qr");
+const diaSinClaseRoutes = require("./routes/diaSinClase");
 
 const app = express();
 
@@ -135,7 +136,8 @@ app.use("/api/profesores", jwtAuth, profesoresRoutes);
 app.use("/api/feriados", jwtAuth, feriadosRoutes);
 app.use("/api/tipoEventos", jwtAuth, tipoEventosRoutes);
 app.use("/api/asistencias", jwtAuth, asistenciasRoutes);
-
+app.use("/api/diaSinClase", jwtAuth, diaSinClaseRoutes);
+  
 // ── Estudiantes ──────────────────────────────────────────────
 
 const alumnoOAdmin = (req, res, next) => {
