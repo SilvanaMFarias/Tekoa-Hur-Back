@@ -19,8 +19,6 @@ const { Model, DataTypes } = require("sequelize");
 
 class Comision extends Model {
   static associate(models) {
-  Comision.belongsTo(models.Profesor, { foreignKey: 'profesorId', as: 'profesor' });
-  Comision.hasMany(models.Horario, { foreignKey: 'comisionId', as: 'horarios' });
   Comision.belongsToMany(models.Estudiante, {
     through: models.Matricula,
     foreignKey: 'comisionId', // Coincidir con Matricula
@@ -41,11 +39,6 @@ class Comision extends Model {
     Comision.hasMany(models.Horario, {
       foreignKey: "comisionId",
       as: "horarios",
-    });
-    Comision.belongsToMany(models.Estudiante, {
-      through: models.Matricula,
-      foreignKey: "comisionId",
-      as: "estudiantes",
     });
   }
 }
