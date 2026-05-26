@@ -10,6 +10,10 @@ class Comision extends Model {
     foreignKey: 'comisionId', // Coincidir con Matricula
     as: 'estudiantes'
   });
+  Comision.hasMany(models.DiaSinClase, {
+  foreignKey: 'comisionId',
+  as: 'diasSinClase'
+});
 }
 }
 
