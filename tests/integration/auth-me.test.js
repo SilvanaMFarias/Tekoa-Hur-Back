@@ -14,7 +14,7 @@ describe("GET /api/auth/me", () => {
   beforeEach(async () => {
 
     const passwordHash = await bcrypt.hash(
-      "admin123",
+      "NuevaPass123.",
       10
     );
 
@@ -32,7 +32,7 @@ describe("GET /api/auth/me", () => {
       .post("/api/auth/login")
       .send({
         dni: "12345678",
-        password: "admin123",
+        password: "NuevaPass123.",
       });
 
     token = loginResponse.body.token;

@@ -93,8 +93,20 @@ app.get("/login", (req, res) => {
     </html>
   `);
 });
+//----Modifico para usar users.json en test-------------------
+//const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+let users = [];
 
-const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+if (process.env.NODE_ENV === "test") {
+  users = [
+    {
+      username: process.env.TEST_USER || "test",
+      password: process.env.TEST_PASSWORD || "1234",
+    },
+  ];
+} else {
+  users = JSON.parse(fs.readFileSync("users.json", "utf8"));
+}
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
