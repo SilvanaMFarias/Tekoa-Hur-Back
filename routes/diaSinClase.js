@@ -25,6 +25,18 @@ router.get('/', diaSinClaseController.getAll);
 
 /**
  * @swagger
+ * /api/diaSinClase/formData:
+ *   get:
+ *     summary: Obtener todos los datos necesarios para el formulario de editar ausencias
+ *     tags: [DiasSinClase]
+ *     responses:
+ *       200:
+ *         description: Objeto unificado con las 4 colecciones de datos
+ */
+router.get('/formData', diaSinClaseController.getFormData); 
+
+/**
+ * @swagger
  * /api/diaSinClase/{id}:
  *   get:
  *     summary: Obtener un día sin clase por ID
