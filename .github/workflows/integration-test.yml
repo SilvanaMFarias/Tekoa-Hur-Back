@@ -1,0 +1,69 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tekoadb_test
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: tekoadb_test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+
+      JWT_SECRET: test_secret
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U postgres
+          do
+            echo "Esperando PostgreSQL..."
+            sleep 2
+          done
+
+      - name: Run migrations
+        run: npx dotenv -e .env.test -- sequelize-cli db:migrate
+
+#      - name: Run seeders
+#        run: npx dotenv -e .env.test -- sequelize-cli db:seed:all
+
+      - name: Run integration tests
+        run: npx dotenv -e .env.test -- npm test
