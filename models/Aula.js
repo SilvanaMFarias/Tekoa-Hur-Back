@@ -1,13 +1,11 @@
 // ============================================================
 // models/Aula.js
 // ============================================================
-// Estado actual: tarjeta R2-01 (atributos del aula)
+// Estado actual: tarjetas R2-01 y R2-02 completadas.
 //
 // Cambios desde R1:
-//   - Se descomenta la asociación con AulaAtributos (1:1).
-//   - La asociación con EspacioQR sigue COMENTADA porque ese
-//     modelo se crea en R2-02. Si lo descomentás antes de crear
-//     EspacioQR.js, Sequelize crashea al arrancar el servidor.
+//   - Asociación con AulaAtributos (R2-01): activa
+//   - Asociación con EspacioQR (R2-02): activa
 //
 // Campos rtoken y rtokenExpira siguen DEPRECATED desde R1-01.
 // ============================================================
@@ -31,13 +29,14 @@ class Aula extends Model {
       as: "atributos",
     });
 
-    // ─── R2-02 PENDIENTE: QR DE ESPACIO ─────────────────────
-    // No descomentar hasta crear models/EspacioQR.js
-    //
-    // Aula.hasMany(models.EspacioQR, {
-    //   foreignKey: "aulaId",
-    //   as: "espacioQRs",
-    // });
+    // ─── R2-02: QR DE ESPACIO (relación 1:N) ────────────────
+    // Un aula puede tener varios QRs históricos pero solo uno
+    // activo a la vez (garantizado por índice parcial único
+    // en el modelo EspacioQR).
+    Aula.hasMany(models.EspacioQR, {
+      foreignKey: "aulaId",
+      as: "espacioQRs",
+    });
   }
 }
 
