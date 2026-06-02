@@ -2,6 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const aulaController = require("../controllers/aulaController");
+const aulaAtributosController = require("../controllers/aulaAtributosController");
+const jwtAuth = require("../middleware/jwtAuth");
+const requireRole = require("../middleware/requireRole");
 const asyncHandler = require("../middleware/asyncHandler");
 const { Aula, Edificio } = require("../models");
 const validateRequiredFields = require("../middleware/requiredFields");
@@ -79,5 +82,100 @@ router.put(
  *     tags: [Aulas]
  */
 router.delete("/:id", asyncHandler(aulaController.delete));
+
+
+/**
+ * @swagger
+ * /api/aulas/{aulaId}/atributos:
+ *   get:
+ *     summary: Obtener atributos de un aula
+ *     tags: [Aulas]
+ *     parameters:
+ *       - in: path
+ *         name: aulaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID del aula
+ *     responses:
+ *       200: { description: Atributos del aula (puede ser null si no se cargaron) }
+ *       404: { description: Aula no encontrada }
+ */
+router.get(
+  "/:aulaId/atributos",
+  jwtAuth,
+  asyncHandler(aulaAtributosController.obtener)
+);
+
+/**
+ * @swagger
+ * /api/aulas/{aulaId}/atributos:
+ *   put:
+ *     summary: Crear o actualizar atributos del aula (upsert)
+ *     tags: [Aulas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: aulaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID del aula
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               capacidad:                { type: integer }
+ *               tipoAula:                 { type: string }
+ *               esLaboratorioInformatico: { type: boolean }
+ *               cantidadPC:               { type: integer }
+ *               descripcion:              { type: string }
+ *               equipamiento:             { type: array, items: { type: string } }
+ *     responses:
+ *       200: { description: Atributos guardados }
+ *       400: { description: Datos inválidos }
+ *       403: { description: Sin permisos }
+ *       404: { description: Aula no encontrada }
+ */
+router.put(
+  "/:aulaId/atributos",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(aulaAtributosController.guardar)
+);
+
+/**
+ * @swagger
+ * /api/aulas/{aulaId}/atributos:
+ *   delete:
+ *     summary: Eliminar atributos del aula
+ *     tags: [Aulas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: aulaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: UUID del aula
+ *     responses:
+ *       200: { description: Atributos eliminados }
+ *       403: { description: Sin permisos }
+ *       404: { description: Aula no encontrada }
+ */
+router.delete(
+  "/:aulaId/atributos",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(aulaAtributosController.eliminar)
+);
 
 module.exports = router;

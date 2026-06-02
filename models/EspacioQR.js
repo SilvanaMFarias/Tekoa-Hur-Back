@@ -1,11 +1,11 @@
 // ============================================================
 // models/EspacioQR.js
 // ============================================================
-// TARJETA R2-02 — QR permanente del espacio (aula)
+// QR permanente del espacio (aula)
 //
 // Este es el SEGUNDO tipo de QR del sistema:
 //
-//   QR DE ASISTENCIA (R1)        QR DE ESPACIO (R2)
+//   QR DE ASISTENCIA             QR DE ESPACIO
 //   ────────────────────────     ──────────────────────────
 //   Vive en Comision             Vive en EspacioQR (esta tabla)
 //   Lo genera el docente         Lo genera el admin
@@ -46,7 +46,6 @@ class EspacioQR extends Model {
     });
   }
 
-  // Helper estático para generar tokens de forma criptográfica
   static generarToken() {
     return crypto.randomBytes(32).toString("hex");
   }
@@ -61,7 +60,6 @@ module.exports = (sequelize) => {
         primaryKey: true,
       },
 
-      // Token único de 64 caracteres hex (256 bits de entropía)
       token: {
         type: DataTypes.STRING(64),
         allowNull: false,
