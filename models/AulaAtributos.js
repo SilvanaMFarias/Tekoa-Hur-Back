@@ -1,8 +1,6 @@
 // ============================================================
 // models/AulaAtributos.js
-// ============================================================
-// TARJETA R2-01 — Modelo de atributos del aula
-//
+// ============================================================//
 // Esta tabla guarda los datos descriptivos de cada aula:
 // capacidad, tipo, si es laboratorio informático, equipamiento,
 // descripción. Es una relación 1:1 con la tabla aulas.

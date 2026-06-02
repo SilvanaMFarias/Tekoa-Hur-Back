@@ -1,8 +1,6 @@
 // ============================================================
 // services/aulaAtributosService.js
 // ============================================================
-// TARJETA R2-05 — CRUD de atributos del aula
-//
 // Esta service maneja la lógica de los atributos descriptivos
 // de cada aula (capacidad, equipamiento, lab informático, etc).
 //

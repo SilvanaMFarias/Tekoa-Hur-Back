@@ -1,13 +1,11 @@
 // ============================================================
 // models/Aula.js
-// ============================================================
-// Estado actual: tarjetas R2-01 y R2-02 completadas.
+// ============================================================//
+// Cambios desde:
+//   - Asociación con AulaAtributos: activa
+//   - Asociación con EspacioQR: activa
 //
-// Cambios desde R1:
-//   - Asociación con AulaAtributos (R2-01): activa
-//   - Asociación con EspacioQR (R2-02): activa
-//
-// Campos rtoken y rtokenExpira siguen DEPRECATED desde R1-01.
+// Campos rtoken y rtokenExpira siguen DEPRECATED.
 // ============================================================
 
 const { Model, DataTypes } = require("sequelize");
@@ -23,13 +21,13 @@ class Aula extends Model {
       as: "horarios",
     });
 
-    // ─── R2-01: ATRIBUTOS DEL AULA (relación 1:1) ───────────
+    // ─── ATRIBUTOS DEL AULA (relación 1:1) ───────────
     Aula.hasOne(models.AulaAtributos, {
       foreignKey: "aulaId",
       as: "atributos",
     });
 
-    // ─── R2-02: QR DE ESPACIO (relación 1:N) ────────────────
+    // ───QR DE ESPACIO (relación 1:N) ────────────────
     // Un aula puede tener varios QRs históricos pero solo uno
     // activo a la vez (garantizado por índice parcial único
     // en el modelo EspacioQR).
@@ -69,7 +67,7 @@ module.exports = (sequelize) => {
         allowNull: false,
       },
 
-      // ─── DEPRECATED desde R1-01 ─────────────────────────────
+      // ─── DEPRECATED ─────────────────────────────
       rtoken: {
         type: DataTypes.STRING,
         allowNull: true,
