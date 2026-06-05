@@ -4,7 +4,8 @@ const {
   DiaSinClase,
   TipoEvento,
   Comision,
-  Materia // Materia para el dropdown
+  Materia, // Materia para el dropdown
+  Feriado
 } = require("../models");
 
 class DiaSinClaseService extends BaseService {
@@ -20,6 +21,28 @@ class DiaSinClaseService extends BaseService {
         as: "comision",
       }
     ]);
+  }
+
+  async verificarConflictoComision(fecha, comisionId) {
+    // si la fecha ya es un feriado institucional fijo no te deja crear
+    const esFeriadoFijo = await Feriado.findOne({ where: { fecha } });
+    if (esFeriadoFijo) {
+      return { tipo: "feriado", datos: esFeriadoFijo };
+    }
+
+    // Validación por Comisión y Fecha
+    const yaTieneDiaSinClase = await this.findOne({
+      where: {
+        fecha: fecha,
+        comisionId: comisionId
+      }
+    });
+
+    if (yaTieneDiaSinClase) {
+      return { tipo: "comision_duplicada", datos: yaTieneDiaSinClase };
+    }
+
+    return null;
   }
 
   async getFormData() {
