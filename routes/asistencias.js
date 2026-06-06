@@ -1,3 +1,4 @@
+
 // ============================================================
 // routes/asistencias.js
 // ============================================================
@@ -9,11 +10,12 @@ const asyncHandler           = require("../middleware/asyncHandler");
 const validateRequiredFields = require("../middleware/requiredFields");
 const validateAsistencia     = require("../middleware/validateAsistencia");
 const asistenciaController   = require("../controllers/asistenciaController");
+const ausenciasAutomaticasService = require("../services/ausenciasAutomaticasService");
 
 // Importar modelos una sola vez al inicio del archivo
 const {
-  Asistencia, Aula, Horario, Matricula,
-  Estudiante, Comision, Profesor,
+    Asistencia, Aula, Horario, Matricula,
+    Estudiante, Comision, Profesor,
 } = require("../models");
 
 // ── GET /api/asistencias ─────────────────────────────────────
@@ -22,9 +24,9 @@ router.get("/:id", asyncHandler(asistenciaController.getById));
 
 // ── POST /api/asistencias ────────────────────────────────────
 router.post("/",
-  validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
-  validateAsistencia,
-  asistenciaController.create
+            validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
+            validateAsistencia,
+            asistenciaController.create
 );
 
 router.put("/:id",    validateAsistencia, asistenciaController.update);
@@ -84,69 +86,69 @@ router.post("/registrar-desde-qr", asyncHandler(asistenciaController.registrarDe
  *       409: { description: Ya registró hoy }
  */
 router.post("/docente-presente", async (req, res) => {
-  try {
-    const { comisionId } = req.body;
-    if (!comisionId) {
-      return res.status(400).json({ message: "comisionId es requerido." });
+    try {
+        const { comisionId } = req.body;
+        if (!comisionId) {
+            return res.status(400).json({ message: "comisionId es requerido." });
+        }
+        
+        const now          = new Date();
+        const fecha        = now.toISOString().split("T")[0];
+        const horaRegistro = now.toTimeString().slice(0, 5);
+        const dias         = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+        const nombreDia    = dias[now.getDay()];
+        
+        const comision = await Comision.findByPk(comisionId, {
+            include: [{ model: Profesor, as: "profesor" }],
+        });
+        if (!comision) {
+            return res.status(404).json({ message: "Comisión no encontrada." });
+        }
+        
+        const dniDocente = req.usuario?.dni;
+        if (comision.profesor && comision.profesor.dni !== String(dniDocente).trim()) {
+            return res.status(403).json({ message: "No sos el docente titular de esta comisión." });
+        }
+        
+        const horario = await Horario.findOne({
+            where: {
+                comisionId,
+                diaSemana:  nombreDia,
+                horaDesde:  { [Op.lte]: horaRegistro },
+                horaHasta:  { [Op.gte]: horaRegistro },
+            },
+        });
+        if (!horario) {
+            return res.status(400).json({
+                message: `No hay clase activa ahora (${nombreDia} ${horaRegistro}).`,
+            });
+        }
+        
+        const yaExiste = await Asistencia.findOne({
+            where: { usuarioId: String(dniDocente).trim(), comisionId, fecha },
+        });
+        if (yaExiste) {
+            return res.status(409).json({ message: "Ya registraste tu presencia hoy en esta comisión." });
+        }
+        
+        const nueva = await Asistencia.create({
+            usuarioId:    String(dniDocente).trim(),
+                                              tipoUsuario:  "PROFESOR",
+                                              comisionId,
+                                              fecha,
+                                              horaRegistro,
+                                              estado:       "PRESENTE",
+        });
+        
+        return res.status(201).json({
+            message: "✅ Presencia registrada correctamente.",
+            data:    nueva,
+        });
+        
+    } catch (err) {
+        console.error("Error docente-presente:", err);
+        return res.status(500).json({ message: "Error interno del servidor." });
     }
-
-    const now          = new Date();
-    const fecha        = now.toISOString().split("T")[0];
-    const horaRegistro = now.toTimeString().slice(0, 5);
-    const dias         = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
-    const nombreDia    = dias[now.getDay()];
-
-    const comision = await Comision.findByPk(comisionId, {
-      include: [{ model: Profesor, as: "profesor" }],
-    });
-    if (!comision) {
-      return res.status(404).json({ message: "Comisión no encontrada." });
-    }
-
-    const dniDocente = req.usuario?.dni;
-    if (comision.profesor && comision.profesor.dni !== String(dniDocente).trim()) {
-      return res.status(403).json({ message: "No sos el docente titular de esta comisión." });
-    }
-
-    const horario = await Horario.findOne({
-      where: {
-        comisionId,
-        diaSemana:  nombreDia,
-        horaDesde:  { [Op.lte]: horaRegistro },
-        horaHasta:  { [Op.gte]: horaRegistro },
-      },
-    });
-    if (!horario) {
-      return res.status(400).json({
-        message: `No hay clase activa ahora (${nombreDia} ${horaRegistro}).`,
-      });
-    }
-
-    const yaExiste = await Asistencia.findOne({
-      where: { usuarioId: String(dniDocente).trim(), comisionId, fecha },
-    });
-    if (yaExiste) {
-      return res.status(409).json({ message: "Ya registraste tu presencia hoy en esta comisión." });
-    }
-
-    const nueva = await Asistencia.create({
-      usuarioId:    String(dniDocente).trim(),
-      tipoUsuario:  "PROFESOR",
-      comisionId,
-      fecha,
-      horaRegistro,
-      estado:       "PRESENTE",
-    });
-
-    return res.status(201).json({
-      message: "✅ Presencia registrada correctamente.",
-      data:    nueva,
-    });
-
-  } catch (err) {
-    console.error("Error docente-presente:", err);
-    return res.status(500).json({ message: "Error interno del servidor." });
-  }
 });
 
 // ── POST /api/asistencias/confirmar-dia ──────────────────────
@@ -180,68 +182,117 @@ router.post("/docente-presente", async (req, res) => {
  *       200: { description: Día confirmado }
  */
 router.post("/confirmar-dia", async (req, res) => {
-  try {
-    const { comisionId, aulaId, fecha, asistencias } = req.body;
-
-    if (!comisionId || !fecha || !Array.isArray(asistencias)) {
-      return res.status(400).json({
-        message: "Faltan campos: comisionId, fecha y asistencias[]",
-      });
-    }
-
-    const horaRegistro = new Date().toTimeString().slice(0, 5);
-    let creados      = 0;
-    let actualizados = 0;
-
-    for (const item of asistencias) {
-      const { dni, estado } = item;
-      if (!dni || !estado) continue;
-
-      const existente = await Asistencia.findOne({
-        where: {
-          usuarioId:   String(dni).trim(),
-          comisionId,
-          fecha,
-          tipoUsuario: "ESTUDIANTE",
-        },
-      });
-
-      if (existente) {
-        if (existente.estado !== estado) {
-          await existente.update({ estado });
-          actualizados++;
+    try {
+        const { comisionId, aulaId, fecha, asistencias } = req.body;
+        
+        if (!comisionId || !fecha || !Array.isArray(asistencias)) {
+            return res.status(400).json({
+                message: "Faltan campos: comisionId, fecha y asistencias[]",
+            });
         }
-      } else {
-        await Asistencia.create({
-          usuarioId:    String(dni).trim(),
-          tipoUsuario:  "ESTUDIANTE",
-          comisionId,
-          fecha,
-          horaRegistro,
-          estado,
+        
+        const horaRegistro = new Date().toTimeString().slice(0, 5);
+        let creados      = 0;
+        let actualizados = 0;
+        
+        for (const item of asistencias) {
+            const { dni, estado } = item;
+            if (!dni || !estado) continue;
+            
+            const existente = await Asistencia.findOne({
+                where: {
+                    usuarioId:   String(dni).trim(),
+                                                       comisionId,
+                                                       fecha,
+                                                       tipoUsuario: "ESTUDIANTE",
+                },
+            });
+            
+            if (existente) {
+                if (existente.estado !== estado) {
+                    await existente.update({ estado });
+                    actualizados++;
+                }
+            } else {
+                await Asistencia.create({
+                    usuarioId:    String(dni).trim(),
+                                        tipoUsuario:  "ESTUDIANTE",
+                                        comisionId,
+                                        fecha,
+                                        horaRegistro,
+                                        estado,
+                });
+                creados++;
+            }
+        }
+        
+        if (aulaId) {
+            await Aula.update(
+                { rtoken: null, rtokenExpira: null },
+                { where: { aulaId } }
+            );
+        }
+        
+        return res.json({
+            ok: true,
+            message: `Día confirmado. ${creados} registros creados, ${actualizados} actualizados.`,
+            creados,
+            actualizados,
         });
-        creados++;
-      }
+        
+    } catch (err) {
+        console.error("Error confirmar-dia:", err);
+        return res.status(500).json({ message: "Error interno del servidor" });
     }
+});
 
-    if (aulaId) {
-      await Aula.update(
-        { rtoken: null, rtokenExpira: null },
-        { where: { aulaId } }
-      );
+// ── POST /api/asistencias/consolidar-ausentes ────────────────
+/**
+ * @swagger
+ * /api/asistencias/consolidar-ausentes:
+ *   post:
+ *     summary: Guarda ausentes para los alumnos sin registro en un día
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [comisionId, fecha]
+ *             properties:
+ *               comisionId: { type: string, format: uuid }
+ *               fecha:      { type: string, format: date }
+ *     responses:
+ *       200: { description: Ausentes consolidados }
+ */
+router.post("/consolidar-ausentes", async (req, res) => {
+    try {
+        const { comisionId, fecha } = req.body;
+        
+        if (!comisionId || !fecha) {
+            return res.status(400).json({
+                message: "Faltan campos: comisionId y fecha",
+            });
+        }
+        
+        const resultado = await ausenciasAutomaticasService.consolidarAusentes({
+            comisionId,
+            fecha,
+        });
+        
+        return res.json({
+            ok: true,
+            message: `Ausentes consolidados. ${resultado.creados} registros creados.`,
+            creados: resultado.creados,
+        });
+        
+    } catch (err) {
+        console.error("Error consolidar-ausentes:", err);
+        return res.status(500).json({ message: "Error interno del servidor" });
     }
-
-    return res.json({
-      ok: true,
-      message: `Día confirmado. ${creados} registros creados, ${actualizados} actualizados.`,
-      creados,
-      actualizados,
-    });
-
-  } catch (err) {
-    console.error("Error confirmar-dia:", err);
-    return res.status(500).json({ message: "Error interno del servidor" });
-  }
 });
 
 // ── GET /api/asistencias/dia ─────────────────────────────────
@@ -266,39 +317,39 @@ router.post("/confirmar-dia", async (req, res) => {
  *       200: { description: Lista de alumnos con estado del día }
  */
 router.get("/dia", async (req, res) => {
-  try {
-    const { comisionId, fecha } = req.query;
-    if (!comisionId || !fecha) {
-      return res.status(400).json({ message: "comisionId y fecha son requeridos" });
+    try {
+        const { comisionId, fecha } = req.query;
+        if (!comisionId || !fecha) {
+            return res.status(400).json({ message: "comisionId y fecha son requeridos" });
+        }
+        
+        const matriculas = await Matricula.findAll({
+            where: { comisionId },
+            include: [{ model: Estudiante, as: "estudiante" }],
+        });
+        
+        const registros = await Asistencia.findAll({
+            where: { comisionId, fecha, tipoUsuario: "ESTUDIANTE" },
+        });
+        
+        const estadoMap = {};
+        for (const r of registros) {
+            estadoMap[String(r.usuarioId)] = r.estado;
+        }
+        
+        const lista = matriculas.map(m => ({
+            dni:             m.estudianteDni,
+            nombre_apellido: m.estudiante?.nombre_apellido ?? m.estudianteDni,
+            estado:          estadoMap[m.estudianteDni] ?? "AUSENTE",
+            escaneó:         !!estadoMap[m.estudianteDni],
+        }));
+        
+        return res.json({ fecha, comisionId, alumnos: lista });
+        
+    } catch (err) {
+        console.error("Error /dia:", err);
+        return res.status(500).json({ message: "Error interno" });
     }
-
-    const matriculas = await Matricula.findAll({
-      where: { comisionId },
-      include: [{ model: Estudiante, as: "estudiante" }],
-    });
-
-    const registros = await Asistencia.findAll({
-      where: { comisionId, fecha, tipoUsuario: "ESTUDIANTE" },
-    });
-
-    const estadoMap = {};
-    for (const r of registros) {
-      estadoMap[String(r.usuarioId)] = r.estado;
-    }
-
-    const lista = matriculas.map(m => ({
-      dni:             m.estudianteDni,
-      nombre_apellido: m.estudiante?.nombre_apellido ?? m.estudianteDni,
-      estado:          estadoMap[m.estudianteDni] ?? "AUSENTE",
-      escaneó:         !!estadoMap[m.estudianteDni],
-    }));
-
-    return res.json({ fecha, comisionId, alumnos: lista });
-
-  } catch (err) {
-    console.error("Error /dia:", err);
-    return res.status(500).json({ message: "Error interno" });
-  }
 });
 
 // ✅ module.exports al final — todos los endpoints ya están registrados
