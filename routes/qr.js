@@ -31,6 +31,7 @@ const requireRole = require("../middleware/requireRole");
 const asyncHandler = require("../middleware/asyncHandler");
 
 const qrAsistenciaController = require("../controllers/qrAsistenciaController");
+const espacioQrController = require("../controllers/espacioQrController");
 
 // Modelos para los endpoints legacy
 const { Aula, Asistencia, Horario, Comision, Matricula, Profesor } =
@@ -310,5 +311,106 @@ router.post("/registrar", async (req, res) => {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
+/**
+ * @swagger
+ * /api/qr/espacio/generar:
+ *   post:
+ *     summary: Generar un QR permanente para un aula
+ *     tags: [QR Espacio]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [aulaId]
+ *             properties:
+ *               aulaId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: UUID del aula
+ *     responses:
+ *       201: { description: QR generado }
+ *       403: { description: Sin permisos }
+ *       404: { description: Aula no encontrada }
+ */
+router.post(
+  "/espacio/generar",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(require("../controllers/espacioQrController").generar)
+);
+
+/**
+ * @swagger
+ * /api/qr/espacio/desactivar/{espacioQrId}:
+ *   post:
+ *     summary: Desactivar un QR específico
+ *     tags: [QR Espacio]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: espacioQrId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200: { description: QR desactivado }
+ *       403: { description: Sin permisos }
+ *       404: { description: QR no encontrado }
+ */
+router.post(
+  "/espacio/desactivar/:espacioQrId",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(require("../controllers/espacioQrController").desactivar)
+);
+
+/**
+ * @swagger
+ * /api/qr/espacio:
+ *   get:
+ *     summary: Listar todos los QRs de espacio
+ *     tags: [QR Espacio]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: soloActivos
+ *         schema: { type: boolean }
+ *         description: Si es true, solo devuelve los activos
+ *     responses:
+ *       200: { description: Lista de QRs }
+ *       403: { description: Sin permisos }
+ */
+router.get(
+  "/espacio",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(require("../controllers/espacioQrController").listar)
+);
+
+/**
+ * @swagger
+ * /api/qr/espacio/info/{token}:
+ *   get:
+ *     summary: Resolver un token público (escaneo del QR)
+ *     tags: [QR Espacio]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Info del aula }
+ *       403: { description: QR inválido o desactivado }
+ */
+router.get(
+  "/espacio/info/:token",
+  asyncHandler(require("../controllers/espacioQrController").info)
+);
 
 module.exports = router;
