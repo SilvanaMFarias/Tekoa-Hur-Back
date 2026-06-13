@@ -154,7 +154,7 @@ app.use("/api/comisiones", require("./routes/comisiones"));
 app.use("/api/matriculas", require("./routes/matriculas"));
 app.use("/api/horarios", require("./routes/horarios"));
 app.use("/api/asistencias", require("./routes/asistencias"));
-app.use("/api/cargar-excel", require("./routes/cargarExcel");
+app.use("/api/cargar-excel", require("./routes/cargarExcel"));
 
 
 app.get("/", (req, res) => {
