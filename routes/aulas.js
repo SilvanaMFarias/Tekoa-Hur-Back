@@ -178,4 +178,52 @@ router.delete(
   asyncHandler(aulaAtributosController.eliminar)
 );
 
+/**
+ * @swagger
+ * /api/aulas/{aulaId}/ocupacion:
+ *   get:
+ *     summary: Calendario de ocupación del aula (admin)
+ *     description: |
+ *       Endpoint privado (requiere admin). Devuelve los eventos
+ *       de ocupación del aula en un rango de fechas. Sirve a la
+ *       pantalla del calendario administrativo (R3-CAL-03).
+ *     tags: [Aulas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: aulaId
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *       - in: query
+ *         name: desde
+ *         schema: { type: string, format: date }
+ *         description: Fecha desde (YYYY-MM-DD). Default - hoy
+ *       - in: query
+ *         name: hasta
+ *         schema: { type: string, format: date }
+ *         description: Fecha hasta (YYYY-MM-DD). Default - desde + 30 días
+ *       - in: query
+ *         name: soloVigentes
+ *         schema: { type: boolean, default: true }
+ *         description: Si es false, incluye eventos pasados (histórico)
+ *     responses:
+ *       200:
+ *         description: Eventos de ocupación del aula en el rango
+ *       400:
+ *         description: Parámetros inválidos
+ *       403:
+ *         description: Sin permisos
+ *       404:
+ *         description: Aula no encontrada
+ */
+router.get(
+  "/:aulaId/ocupacion",
+  jwtAuth,
+  requireRole("administrador"),
+  asyncHandler(
+    require("../controllers/calendarioOcupacionController").ocupacionAdmin
+  )
+);
+
 module.exports = router;

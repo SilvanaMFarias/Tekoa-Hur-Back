@@ -413,4 +413,33 @@ router.get(
   asyncHandler(require("../controllers/espacioQrController").info)
 );
 
+/**
+ * @swagger
+ * /api/qr/espacio/calendario/{token}:
+ *   get:
+ *     summary: Calendario de ocupación del aula desde el QR público
+ *     description: |
+ *       Endpoint PÚBLICO (sin auth). Devuelve los eventos de
+ *       ocupación del aula HOY desde la hora actual hasta el
+ *       final del día. Combina cursadas y reservas vigentes.
+ *     tags: [QR Espacio]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema: { type: string }
+ *         description: Token del QR escaneado
+ *     responses:
+ *       200:
+ *         description: Eventos de ocupación del aula hoy
+ *       403:
+ *         description: QR inválido o desactivado
+ */
+router.get(
+  "/espacio/calendario/:token",
+  asyncHandler(
+    require("../controllers/calendarioOcupacionController").ocupacionPublicaHoy
+  )
+);
+
 module.exports = router;
