@@ -4,6 +4,7 @@
 // Cambios desde:
 //   - Asociación con AulaAtributos: activa
 //   - Asociación con EspacioQR: activa
+//   - Asociación con Reserva: activa
 //
 // Campos rtoken y rtokenExpira siguen DEPRECATED.
 // ============================================================
@@ -34,6 +35,15 @@ class Aula extends Model {
     Aula.hasMany(models.EspacioQR, {
       foreignKey: "aulaId",
       as: "espacioQRs",
+    });
+
+    // ─── RESERVAS (relación 1:N) ─────────────
+    // Un aula puede tener muchas reservas (puntuales) a lo largo
+    // del tiempo. La validación de conflictos NO está acá: la hace
+    // el service de reservas (futuro) antes de crear una nueva.
+    Aula.hasMany(models.Reserva, {
+      foreignKey: "aulaId",
+      as: "reservas",
     });
   }
 }
