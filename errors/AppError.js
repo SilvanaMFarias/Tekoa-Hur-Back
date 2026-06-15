@@ -1,7 +1,5 @@
 // se crea un error personalizado para manejar errores de la app de forma consistente
-// se crea un error personalizado para manejar errores de la app de forma consistente
 // errors/AppError.js
-
 class AppError extends Error {
   constructor(message, status = 500, code = null) {
     super(message);

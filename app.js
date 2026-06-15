@@ -30,6 +30,7 @@ const tipoEventosRoutes = require("./routes/tipoEventos");
 const qrRoutes          = require("./routes/qr");
 const diaSinClaseRoutes = require("./routes/diaSinClase");
 const guaraniRoutes     = require("./routes/guarani");
+const reporteRoutes     = require("./routes/reporte");
 
 const app = express();
 
@@ -139,6 +140,7 @@ app.use("/api/tipoEventos", jwtAuth, tipoEventosRoutes);
 app.use("/api/asistencias", jwtAuth, asistenciasRoutes);
 app.use("/api/diaSinClase", jwtAuth, diaSinClaseRoutes);
 app.use("/api/guarani", jwtAuth, guaraniRoutes);
+app.use("/api/reportes",jwtAuth ,reporteRoutes);
 
 // ── Estudiantes ──────────────────────────────────────────────
 
