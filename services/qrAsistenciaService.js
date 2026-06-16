@@ -257,7 +257,59 @@ class QrAsistenciaService {
       );
     }
 
-    // ── 4. Evitar doble registro ─────────────────────────────
+    // ── 4. Verificación de geolocalización (si está configurada) ─────────────────
+    const centerLat = process.env.UNAHUR_LAT ? Number(process.env.UNAHUR_LAT) : null;
+    const centerLon = process.env.UNAHUR_LON ? Number(process.env.UNAHUR_LON) : null;
+    const allowedMeters = process.env.QR_GEOFENCE_METERS ? Number(process.env.QR_GEOFENCE_METERS) : 50;
+
+    if (
+      centerLat !== null &&
+      centerLon !== null &&
+      !Number.isNaN(centerLat) &&
+      !Number.isNaN(centerLon)
+    ) {
+      // Extraer coordenadas del request (aceptamos lat/lon, latitude/longitude, latitud/longitud)
+      const latKeys = ["lat", "latitude", "latitud"];
+      const lonKeys = ["lon", "lng", "longitude", "longitud"];
+      let userLat = null;
+      let userLon = null;
+      for (const k of latKeys) {
+        if (Object.prototype.hasOwnProperty.call(data, k) && data[k] !== undefined && data[k] !== null) {
+          userLat = Number(data[k]);
+          break;
+        }
+      }
+      for (const k of lonKeys) {
+        if (Object.prototype.hasOwnProperty.call(data, k) && data[k] !== undefined && data[k] !== null) {
+          userLon = Number(data[k]);
+          break;
+        }
+      }
+
+      if (userLat === null || userLon === null || Number.isNaN(userLat) || Number.isNaN(userLon)) {
+        throw AppError.badRequest("Se requieren coordenadas de geolocalización (latitud y longitud).", "GEOLOCATION_MISSING");
+      }
+
+      // Haversine (metros)
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const R = 6371000; // Earth radius in meters
+      const dLat = toRad(userLat - centerLat);
+      const dLon = toRad(userLon - centerLon);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(centerLat)) * Math.cos(toRad(userLat)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distancia = R * c;
+
+      if (distancia > allowedMeters) {
+        throw AppError.forbidden(
+          `Fuera del área permitida (${Math.round(distancia)} m > ${allowedMeters} m)`,
+          "GEOLOCATION_OUT_OF_RANGE"
+        );
+      }
+    }
+
+    // ── 5. Evitar doble registro ─────────────────────────────
     const yaExiste = await Asistencia.findOne({
       where: {
         usuarioId: dni,
