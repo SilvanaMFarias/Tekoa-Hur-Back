@@ -36,6 +36,7 @@ const {
   Edificio,
 } = require("../models");
 const AppError = require("../errors/AppError");
+const { calcularDistanciaMetros } = require("../utils/geolocation");
 
 function nombreDia(date) {
   return [
@@ -170,8 +171,9 @@ class QrAsistenciaService {
    *   3. Validar permisos:
    *        - Si tipoUsuario=ESTUDIANTE → debe estar matriculado.
    *        - Si tipoUsuario=PROFESOR → debe ser el docente titular.
-   *   4. Verificar que no exista ya un registro hoy.
-   *   5. Crear la asistencia.
+   *   4. Validar geolocalización (si está configurada) 
+   *   5. Verificar que no exista ya un registro hoy.
+   *   6. Crear la asistencia.
    *
    * Esta función reemplaza al viejo "registrarDesdeQR" basado en
    * aulaId+rtoken. La firma del request cambia: ahora viene qrToken.
@@ -180,13 +182,21 @@ class QrAsistenciaService {
    * @param {string} data.qrToken     - token del QR escaneado
    * @param {string} data.tipoUsuario - "ESTUDIANTE" | "PROFESOR"
    * @param {string} data.usuarioId   - DNI del usuario
+   * @param {number} data.latitudUsuario - Latitud del usuario (coordenada geográfica)
+   * @param {number} data.longitudUsuario - Longitud del usuario (coordenada geográfica)
    */
   async registrarDesdeQR(data) {
-    const { qrToken, tipoUsuario, usuarioId } = data;
+    const {
+      qrToken,
+      tipoUsuario,
+      usuarioId,
+      latitudUsuario,
+      longitudUsuario
+    } = data;
 
     if (!qrToken || !tipoUsuario || !usuarioId) {
       throw AppError.badRequest(
-        "Faltan campos: qrToken, tipoUsuario, usuarioId"
+        "Faltan campos: qrToken, tipoUsuario, usuarioId, latitudUsuario, longitudUsuario"
       );
     }
 
@@ -257,53 +267,70 @@ class QrAsistenciaService {
       );
     }
 
-    // ── 4. Verificación de geolocalización (si está configurada) ─────────────────
-    const centerLat = process.env.UNAHUR_LAT ? Number(process.env.UNAHUR_LAT) : null;
-    const centerLon = process.env.UNAHUR_LON ? Number(process.env.UNAHUR_LON) : null;
-    const allowedMeters = process.env.QR_GEOFENCE_METERS ? Number(process.env.QR_GEOFENCE_METERS) : 50;
+    // ── 4. Verificación de geolocalización ──────────────────────────────
+    // Validar que el usuario se encuentre físicamente dentro de un
+    // radio permitido antes de registrar la asistencia.
+    //
+    // La ubicación de referencia se configura mediante variables
+    // de entorno y representa el centro de la geocerca:
+    //   UNAHUR_LAT
+    //   UNAHUR_LON
+    //   QR_GEOFENCE_METERS
+    //
+    // Si las coordenadas no están configuradas, la validación se omite.
 
-    if (
-      centerLat !== null &&
-      centerLon !== null &&
+
+    // Coordenadas del centro de la geocerca obtenidas desde variables de entorno.
+    const centerLat = Number(process.env.UNAHUR_LAT);
+    const centerLon = Number(process.env.UNAHUR_LON);
+
+    // Radio máximo permitido para registrar asistencia.
+    // Si no se configura explícitamente, se utilizarán 50 metros.
+    const allowedMeters = Number(process.env.QR_GEOFENCE_METERS || 50);
+
+    // Solo se realiza la validación si existe una geocerca configurada.
+    const geolocalizacionConfigurada =
       !Number.isNaN(centerLat) &&
-      !Number.isNaN(centerLon)
-    ) {
-      // Extraer coordenadas del request (aceptamos lat/lon, latitude/longitude, latitud/longitud)
-      const latKeys = ["lat", "latitude", "latitud"];
-      const lonKeys = ["lon", "lng", "longitude", "longitud"];
-      let userLat = null;
-      let userLon = null;
-      for (const k of latKeys) {
-        if (Object.prototype.hasOwnProperty.call(data, k) && data[k] !== undefined && data[k] !== null) {
-          userLat = Number(data[k]);
-          break;
-        }
-      }
-      for (const k of lonKeys) {
-        if (Object.prototype.hasOwnProperty.call(data, k) && data[k] !== undefined && data[k] !== null) {
-          userLon = Number(data[k]);
-          break;
-        }
-      }
+      !Number.isNaN(centerLon);
 
-      if (userLat === null || userLon === null || Number.isNaN(userLat) || Number.isNaN(userLon)) {
-        throw AppError.badRequest("Se requieren coordenadas de geolocalización (latitud y longitud).", "GEOLOCATION_MISSING");
+    if (geolocalizacionConfigurada) {
+
+      // Si la geocerca está activa, el frontend debe enviar
+      // coordenadas válidas para poder registrar asistencia.
+      if (
+        latitudUsuario === undefined ||
+        longitudUsuario === undefined ||
+        Number.isNaN(Number(latitudUsuario)) ||
+        Number.isNaN(Number(longitudUsuario))
+      ) {
+        throw AppError.badRequest(
+          "Se requiere la geolocalización. Por favor active la ubicación y permita compartirla para registrar la asistencia.",
+          "GEOLOCATION_MISSING"
+        );
       }
+      //Para probar que recibe coordenadas
+      console.log({
+        latitudUsuario,
+        longitudUsuario,
+      });
 
-      // Haversine (metros)
-      const toRad = (deg) => (deg * Math.PI) / 180;
-      const R = 6371000; // Earth radius in meters
-      const dLat = toRad(userLat - centerLat);
-      const dLon = toRad(userLon - centerLon);
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(toRad(centerLat)) * Math.cos(toRad(userLat)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distancia = R * c;
 
-      if (distancia > allowedMeters) {
+
+      // Calcula la distancia entre la ubicación actual del usuario
+      // y el centro de la geocerca configurada.
+      const distanciaMetros = calcularDistanciaMetros(
+        centerLat,
+        centerLon,
+        Number(latitudUsuario),
+        Number(longitudUsuario)
+      );
+
+      // Si la distancia supera el radio permitido, se rechaza el registro de asistencia.
+      if (distanciaMetros > allowedMeters) {
         throw AppError.forbidden(
-          `Fuera del área permitida (${Math.round(distancia)} m > ${allowedMeters} m)`,
+          `Fuera del área permitida (${Math.round(
+            distanciaMetros
+          )} m > ${allowedMeters} m)`,
           "GEOLOCATION_OUT_OF_RANGE"
         );
       }
@@ -325,7 +352,7 @@ class QrAsistenciaService {
       );
     }
 
-    // ── 5. Crear ─────────────────────────────────────────────
+    // ── 6. Crear ─────────────────────────────────────────────
     const nueva = await Asistencia.create({
       usuarioId: dni,
       tipoUsuario: tipo,
