@@ -101,3 +101,12 @@ Abre tu navegador en: http://localhost:3001/api-docs
 Se vera una interfaz interactiva con:
 - Los endpoints como GET y POST
 - La posibilidad de probarlos directamente desde la web
+
+## Configuración para geolocalización del QR de asistencia
+Para habilitar la verificación de que el escaneo se realice dentro de un radio de metros de la UNAHUR, definir en el entorno:
+
+- `UNAHUR_LAT` : latitud (ej: -34.XXXXX)
+- `UNAHUR_LON` : longitud (ej: -58.XXXXX)
+- `QR_GEOFENCE_METERS` : radio en metros (por defecto 50)
+
+Cuando `UNAHUR_LAT` y `UNAHUR_LON` estén definidas, el endpoint `POST /api/qr/asistencia/registrar` exigirá que el body incluya `lat` y `lon` (o `latitude`/`longitude` o `latitud`/`longitud`). Si la distancia del punto enviado al centro configurado excede `QR_GEOFENCE_METERS`, la solicitud será rechazada con 403 (GEOLOCATION_OUT_OF_RANGE).
