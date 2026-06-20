@@ -22,6 +22,7 @@ module.exports = {
     "/coverage/",                 
     "/public/swagger-autologin.js",
     "/public/",
+    "/controllers/qrController.js", // Solo el controlador, no el servicio ni el modelo
     "/sync.js",
     "/jest.config.js",],
 };

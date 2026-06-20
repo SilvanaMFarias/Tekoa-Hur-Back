@@ -10,7 +10,11 @@ const {
   crearHorario, 
   crearMatricula 
 } = require("../setup/factories");
-const { Asistencia } = require("../../models");
+const { Asistencia, Horario, Matricula } = require("../../models");
+
+// Mockeamos el servicio externo de Guaraní para controlar el período lectivo en los tests de ausencias
+const guaraniService = require("../../services/guaraniService");
+jest.mock("../../services/guaraniService");
 
 describe("Pruebas del Módulo de Asistencias", () => {
   let token;
@@ -20,6 +24,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
   });
 
   beforeEach(() => {
+    jest.clearAllMocks();
     // ⏰ Fijamos el tiempo en un Lunes específico a las 19:30:00 hora local
     jest.useFakeTimers();
     jest.setSystemTime(new Date("2026-06-01T19:30:00")); 
@@ -158,7 +163,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
   });
 
   // ============================================================
-  // NUEVAS PRUEBAS: CONTROLADOR PRINCIPAL (asistenciaController)
+  // CONTROLADOR PRINCIPAL (asistenciaController)
   // ============================================================
   describe("Rutas Base e Integración de AsistenciaController (/api/asistencias)", () => {
 
@@ -204,7 +209,6 @@ describe("Pruebas del Módulo de Asistencias", () => {
         comisionId: comision.comisionId
       });
 
-      // Le pegamos al endpoint que mapea directamente al método "registrarDesdeQR" de asistenciaController
       const response = await request(app)
         .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
@@ -215,10 +219,88 @@ describe("Pruebas del Módulo de Asistencias", () => {
           rtoken: "QR_NATIVO_999"
         });
 
-      // Verificamos que devuelva 210 o 201 según lo definido en asistenciaController.js
       expect(response.status).toBe(201);
       expect(response.body.message).toContain("✅ Asistencia registrada correctamente");
       expect(response.body.data).toHaveProperty("asistenciaId");
+    });
+  });
+
+  // ============================================================
+  // CONSOLIDACIÓN AUTOMÁTICA DE AUSENCIAS
+  // ============================================================
+  describe("POST /api/asistencias/consolidar-ausentes", () => {
+    
+    test("debe marcar como AUSENTE solo a los estudiantes que no escanearon el QR", async () => {
+      const comision = await crearComision();
+      const aula = await crearAula();
+
+      // Mock de Guaraní: Forzamos periodo académico activo para la fecha del FakeTimer (2026-06-01)
+      guaraniService.getPeriodosTekoa.mockResolvedValue([
+        {
+          periodo: "256",
+          fecha_inicio_dictado: "2026-03-01",
+          fecha_fin_dictado: "2026-07-15"
+        }
+      ]);
+
+      // Alumnos objetivos para la prueba
+      const estudiantePresente = await crearEstudiante();
+      const estudianteAusente = await crearEstudiante();
+
+      // Matricular a ambos en la misma comisión
+      await crearMatricula({ estudianteDni: estudiantePresente.dni, comisionId: comision.comisionId });
+      await crearMatricula({ estudianteDni: estudianteAusente.dni, comisionId: comision.comisionId });
+
+      // Uno de ellos asiste normalmente registrando su PRESENTE de forma temprana
+      await Asistencia.create({
+        usuarioId: estudiantePresente.dni,
+        tipoUsuario: "ESTUDIANTE",
+        comisionId: comision.comisionId,
+        fecha: "2026-06-01",
+        horaRegistro: "18:15",
+        estado: "PRESENTE"
+      });
+
+      // Se ejecuta el proceso de consolidación invocando al endpoint de tus rutas
+      const response = await request(app)
+        .post("/api/asistencias/consolidar-ausentes")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          comisionId: comision.comisionId,
+          fecha: "2026-06-01"
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.ok).toBe(true);
+      expect(response.body.creados).toBe(1); // Solo mutó el alumno faltante
+
+      // Verificación en la base de datos relacional
+      const asistenciaEstudiante1 = await Asistencia.findOne({
+        where: { usuarioId: estudiantePresente.dni, comisionId: comision.comisionId, fecha: "2026-06-01" }
+      });
+      const asistenciaEstudiante2 = await Asistencia.findOne({
+        where: { usuarioId: estudianteAusente.dni, comisionId: comision.comisionId, fecha: "2026-06-01" }
+      });
+
+      // El alumno que escaneó sigue intacto
+      expect(asistenciaEstudiante1.estado).toBe("PRESENTE");
+      
+      // El alumno que no asistió pasó a estar ausente con la hora del fake system time
+      expect(asistenciaEstudiante2).not.toBeNull();
+      expect(asistenciaEstudiante2.estado).toBe("AUSENTE");
+      expect(asistenciaEstudiante2.horaRegistro).toBe("19:30:00");
+    });
+
+    test("debe retornar 400 si la petición carece de comisionId o fecha", async () => {
+      const comision = await crearComision();
+
+      const response = await request(app)
+        .post("/api/asistencias/consolidar-ausentes")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ comisionId: comision.comisionId }); // Falta parámetro fecha
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain("Faltan campos: comisionId y fecha");
     });
   });
 });

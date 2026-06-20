@@ -1,4 +1,6 @@
+const bcrypt = require("bcryptjs");
 const {
+  Usuario,
   Materia,
   Profesor,
   Comision,
@@ -8,14 +10,46 @@ const {
   Aula,
   Horario,
   Matricula,
-  Edificio // <-- Nos aseguramos de importar Edificio
+  Edificio 
 } = require("../../models");
 
 const uniko = () => Math.floor(Math.random() * 1000000);
+const SALT = 10;
 
-// ─── NUEVA FACTORY PARA EDIFICIO ─────────────────────────────────────
+// ─── NUEVA FACTORY PARA USUARIO ──────────────────────────────────────
+async function crearUsuario(data = {}) {
+  const idUnico = uniko();
+  const dniFinal = data.dni || String(idUnico).padStart(8, "0");
+  const rolFinal = data.rol || "alumno";
+  let referenciaIdFinal = data.referenciaId;
+
+  // Si no viene referenciaId, creamos la entidad correspondiente en DB para mantener la integridad
+  if (!referenciaIdFinal) {
+    if (rolFinal === "alumno") {
+      const est = await crearEstudiante({ dni: dniFinal });
+      referenciaIdFinal = est.dni;
+    } else if (rolFinal === "docente") {
+      const prof = await crearProfesor({ dni: dniFinal });
+      referenciaIdFinal = prof.dni;
+    } else {
+      referenciaIdFinal = dniFinal; // Admin se referencia a sí mismo o null
+    }
+  }
+
+  return Usuario.create({
+    dni: dniFinal,
+    nombre: data.nombre || `Usuario Test ${idUnico}`,
+    password: data.password ? await bcrypt.hash(String(data.password), SALT) : await bcrypt.hash("password123", SALT),
+    rol: rolFinal,
+    referenciaId: referenciaIdFinal,
+    activo: data.activo !== undefined ? data.activo : true,
+    cambioPasswordObligatorio: data.cambioPasswordObligatorio !== undefined ? data.cambioPasswordObligatorio : false,
+    ...data
+  });
+}
+
+// ─── FACTORY PARA EDIFICIO ───────────────────────────────────────────
 async function crearEdificio(data = {}) {
-  // Ajustá los campos si tu modelo Edificio pide cosas distintas (ej: nombre)
   return Edificio.create({
     nombre: `Edificio Central ${uniko()}`,
     ...data
@@ -32,7 +66,7 @@ async function crearMateria(data = {}) {
 async function crearProfesor(data = {}) {
   const idUnico = uniko();
   return Profesor.create({
-    dni: String(idUnico).padStart(8, "0"), 
+    dni: data.dni || String(idUnico).padStart(8, "0"), 
     nombre_apellido: `Profesor Test ${idUnico}`,
     email: `profesor_${idUnico}@test.com`,
     ...data
@@ -62,7 +96,7 @@ async function crearTipoEvento(data = {}) {
 async function crearEstudiante(data = {}) {
   const idUnico = uniko();
   return Estudiante.create({
-    dni: String(idUnico).padStart(8, "0"),
+    dni: data.dni || String(idUnico).padStart(8, "0"),
     nombre_apellido: `Estudiante Test ${idUnico}`,
     ...data
   });
@@ -83,13 +117,11 @@ async function crearAsistencia(data = {}) {
   });
 }
 
-// ─── DETALLE CLAVE: Ahora el Aula crea y se ata a un Edificio real ────
 async function crearAula(data = {}) {
   let edificioId = data.edificioId;
   
   if (!edificioId) {
     const edificio = await crearEdificio();
-    // Validamos si usa edificioId o id según cómo esté configurado tu modelo
     edificioId = edificio.edificioId || edificio.id;
   }
 
@@ -130,6 +162,7 @@ async function crearMatricula(data = {}) {
 }
 
 module.exports = {
+  crearUsuario,
   crearEdificio,
   crearMateria,
   crearProfesor,
