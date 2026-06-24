@@ -1,3 +1,4 @@
+require("../setup/test-db");
 const request = require("supertest");
 const app = require("../../app");
 const { AulaAtributos, Aula } = require("../../models");
@@ -6,6 +7,7 @@ const { generarTokenAdmin } = require("../setup/auth");
 
 describe("Pruebas de Integración Reales - AulaAtributos", () => {
   let aulaReal;
+  let aulaId; // Guardamos el ID unificado acá
   let tokenAdmin;
 
   beforeEach(async () => {
@@ -14,6 +16,9 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
 
     // Usamos factory real que crea el Edificio y el Aula de forma consistente en la DB de pruebas
     aulaReal = await crearAula();
+    
+    // Unificamos el ID dinámicamente según lo devuelva tu modelo Sequelize
+    aulaId = aulaReal.id || aulaReal.aulaId;
   });
 
   // ============================================================================
@@ -22,7 +27,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
   describe("GET /api/aulas/:aulaId/atributos", () => {
     it("debería retornar 200 y null si el aula existe pero no posee atributos configurados", async () => {
       const res = await request(app)
-        .get(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .get(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`) // jwtAuth lo exige en tus rutas
         .expect(200);
 
@@ -35,7 +40,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
     it("debería retornar 200 junto con los atributos si ya están persistidos en la base de datos", async () => {
       // Impactamos directamente la BD de pruebas asociada al aula de la factory
       await AulaAtributos.create({
-        aulaId: aulaReal.id || aulaReal.aulaId,
+        aulaId: aulaId,
         capacidad: 45,
         tipoAula: "Laboratorio",
         esLaboratorioInformatico: true,
@@ -43,7 +48,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
       });
 
       const res = await request(app)
-        .get(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .get(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .expect(200);
 
@@ -54,7 +59,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
 
     it("debería rebotar con 401 si se intenta consultar sin el token de autenticación", async () => {
       await request(app)
-        .get(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .get(`/api/aulas/${aulaId}/atributos`)
         // Omitimos la cabecera Authorization intencionalmente
         .expect(401);
     });
@@ -85,7 +90,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
 
     it("debería crear los atributos por primera vez usando el UPSERT atómico", async () => {
       const res = await request(app)
-        .put(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .put(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .send(payloadValido)
         .expect(200);
@@ -100,7 +105,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
       });
 
       // Confirmación de la persistencia atómica real en Postgres
-      const enBD = await AulaAtributos.findByPk(aulaReal.id || aulaReal.aulaId);
+      const enBD = await AulaAtributos.findByPk(aulaId);
       expect(enBD).not.toBeNull();
       expect(enBD.tipoAula).toBe("Teórica");
     });
@@ -113,7 +118,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
       };
 
       const res = await request(app)
-        .put(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .put(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .send(payloadInconsistente)
         .expect(200);
@@ -121,13 +126,13 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
       // El service debió haber limpiado el campo cantidadPC poniéndolo en null
       expect(res.body.atributos.cantidadPC).toBeNull();
 
-      const registroGuardado = await AulaAtributos.findByPk(aulaReal.id || aulaReal.aulaId);
+      const registroGuardado = await AulaAtributos.findByPk(aulaId);
       expect(registroGuardado.cantidadPC).toBeNull();
     });
 
     it("debería retornar 400 si el administrador ingresa una capacidad con valor negativo", async () => {
       const res = await request(app)
-        .put(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .put(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .send({ capacidad: -15 })
         .expect(400);
@@ -142,8 +147,6 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
   // ============================================================================
   describe("DELETE /api/aulas/:aulaId/atributos", () => {
     it("debería borrar los registros de atributos pero mantener intacta la entidad Aula en la BD", async () => {
-      const aulaId = aulaReal.id || aulaReal.aulaId;
-
       // Generamos los atributos directo en la BD
       await AulaAtributos.create({
         aulaId,
@@ -167,7 +170,7 @@ describe("Pruebas de Integración Reales - AulaAtributos", () => {
 
     it("debería retornar un mensaje coherente si el aula existe pero no tenía atributos previos", async () => {
       const res = await request(app)
-        .delete(`/api/aulas/${aulaReal.id || aulaReal.aulaId}/atributos`)
+        .delete(`/api/aulas/${aulaId}/atributos`)
         .set("Authorization", `Bearer ${tokenAdmin}`)
         .expect(200);
 

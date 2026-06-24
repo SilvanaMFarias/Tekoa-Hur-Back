@@ -3,6 +3,7 @@ const app = require("../../app");
 const { Usuario } = require("../../models");
 const bcrypt = require("bcryptjs");
 const transporter = require("../../config/mailer");
+const { crearUsuario,crearUsuarioConEmail } = require("../setup/factories"); // Importamos tu factory
 
 // Mockear el transporter de nodemailer para interceptar los correos
 jest.mock("../../config/mailer", () => ({
@@ -13,21 +14,16 @@ describe("Pruebas de Integración Reales - Recuperación de Contraseña", () => 
   const SALT = 10;
   let usuarioBase;
 
-  // En lugar de hacer force:true por cada test, limpiamos solo los registros de la tabla
   beforeEach(async () => {
     jest.clearAllMocks();
 
     // 1. Forzar limpieza limpia de filas para evitar locks de Postgres
     await Usuario.destroy({ where: {}, cascade: true, force: true });
 
-    // 2. Insertar el usuario de prueba con un DNI único por iteración
-    const idUnico = Math.floor(Math.random() * 1000000);
-    
-    usuarioBase = await Usuario.create({
-      dni: String(idUnico).padStart(8, "0"),
+    // 2. Insertar el usuario de prueba usando la factory real de forma consistente
+    usuarioBase = await crearUsuarioConEmail({
       nombre: "Tomás Miranda", 
-      email: `tomas.${idUnico}@test.com`, // Email dinámico único para evitar colisiones Unique
-      password: await bcrypt.hash("Password123!", SALT),
+      password: "Password123!", // La factory se encarga de encriptarla nativamente
       rol: "alumno", 
       estado: "AUSENTE", 
       activo: true,
@@ -42,12 +38,13 @@ describe("Pruebas de Integración Reales - Recuperación de Contraseña", () => 
     it("debería generar token, guardarlo hasheado y enviar el correo con el link correcto", async () => {
       const res = await request(app)
         .post("/api/auth/forgot-password")
-        .send({ email: usuarioBase.email }) // Usar el email generado dinámicamente
+        .send({ email: usuarioBase.email }) // Usar el email generado dinámicamente por la factory
         .expect(200);
 
       expect(res.body.message).toMatch(/si el email se encuentra registrado/i);
 
-      const usuarioActualizado = await Usuario.findByPk(usuarioBase.usuarioId);
+      // CORREGIDO: Buscamos dinámicamente según la PK del modelo (id o usuarioId)
+      const usuarioActualizado = await Usuario.findByPk(usuarioBase.id || usuarioBase.usuarioId);
       expect(usuarioActualizado.resetPasswordToken).not.toBeNull();
       expect(usuarioActualizado.resetPasswordExpires).toBeInstanceOf(Date);
 

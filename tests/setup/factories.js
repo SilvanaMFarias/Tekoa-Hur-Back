@@ -16,14 +16,14 @@ const {
 const uniko = () => Math.floor(Math.random() * 1000000);
 const SALT = 10;
 
-// ─── NUEVA FACTORY PARA USUARIO ──────────────────────────────────────
+// 🛠️ FACTORY PARA USUARIO (Original - Intacta)
 async function crearUsuario(data = {}) {
   const idUnico = uniko();
   const dniFinal = data.dni || String(idUnico).padStart(8, "0");
   const rolFinal = data.rol || "alumno";
   let referenciaIdFinal = data.referenciaId;
 
-  // Si no viene referenciaId, creamos la entidad correspondiente en DB para mantener la integridad
+  // Si no viene referenciaId, se crea la entidad correspondiente en DB para mantener la integridad
   if (!referenciaIdFinal) {
     if (rolFinal === "alumno") {
       const est = await crearEstudiante({ dni: dniFinal });
@@ -32,23 +32,46 @@ async function crearUsuario(data = {}) {
       const prof = await crearProfesor({ dni: dniFinal });
       referenciaIdFinal = prof.dni;
     } else {
-      referenciaIdFinal = dniFinal; // Admin se referencia a sí mismo o null
+      referenciaIdFinal = dniFinal; // Admin se referencia a sí mismo
     }
   }
 
+  // Si es administrador, aseguramos defensivamente un email si no lo enviaron
+  let emailFinal = data.email;
+  if (rolFinal === "administrador" && !emailFinal) {
+    emailFinal = `admin-${idUnico}@test.com`;
+  }
+
+  // Resolvemos la password antes para que no se pise con el ...data plano
+  const passwordPlana = data.password || "password123";
+  const passwordHasheada = await bcrypt.hash(String(passwordPlana), SALT);
+
   return Usuario.create({
-    dni: dniFinal,
-    nombre: data.nombre || `Usuario Test ${idUnico}`,
-    password: data.password ? await bcrypt.hash(String(data.password), SALT) : await bcrypt.hash("password123", SALT),
+    nombre: `Usuario Test ${idUnico}`,
+    email: emailFinal,
+    activo: true,
+    cambioPasswordObligatorio: false,
+    ...data, 
+    dni: dniFinal,// evitamos que el dni se sobreescriba 
     rol: rolFinal,
     referenciaId: referenciaIdFinal,
-    activo: data.activo !== undefined ? data.activo : true,
-    cambioPasswordObligatorio: data.cambioPasswordObligatorio !== undefined ? data.cambioPasswordObligatorio : false,
+    password: passwordHasheada // El hash encriptado simpre
+  });
+}
+
+// 🌟 Variante que asegura un email único dinámico para CUALQUIER rol
+async function crearUsuarioConEmail(data = {}) {
+  const idUnico = uniko();
+  const emailPorDefecto = `test-${idUnico}@correo.com`;
+
+  // Invoca la lógica relacional de la factory base inyectando el email seguro
+  return crearUsuario({
+    email: data.email || emailPorDefecto,
     ...data
   });
 }
 
-// ─── FACTORY PARA EDIFICIO ───────────────────────────────────────────
+// 🏢 FACTORY PARA EDIFICIO 
 async function crearEdificio(data = {}) {
   return Edificio.create({
     nombre: `Edificio Central ${uniko()}`,
@@ -56,6 +79,7 @@ async function crearEdificio(data = {}) {
   });
 }
 
+// 📚 FACTORY PARA MATERIA 
 async function crearMateria(data = {}) {
   return Materia.create({
     nombre: `Programación ${uniko()}`,
@@ -63,6 +87,7 @@ async function crearMateria(data = {}) {
   });
 }
 
+// 👨‍🏫 FACTORY PARA PROFESOR 
 async function crearProfesor(data = {}) {
   const idUnico = uniko();
   return Profesor.create({
@@ -73,6 +98,7 @@ async function crearProfesor(data = {}) {
   });
 }
 
+// 👥 FACTORY PARA COMISIÓN 
 async function crearComision(data = {}) {
   const { materia, profesor, ...restoData } = data;
   const materiaInstancia = materia || await crearMateria();
@@ -86,6 +112,7 @@ async function crearComision(data = {}) {
   });
 }
 
+// 🏷️ FACTORY PARA TIPO DE EVENTO
 async function crearTipoEvento(data = {}) {
   return TipoEvento.create({
     nombre: `Día institucional ${uniko()}`,
@@ -93,6 +120,7 @@ async function crearTipoEvento(data = {}) {
   });
 }
 
+// 🎓 FACTORY PARA ESTUDIANTE
 async function crearEstudiante(data = {}) {
   const idUnico = uniko();
   return Estudiante.create({
@@ -102,6 +130,7 @@ async function crearEstudiante(data = {}) {
   });
 }
 
+// 📝 FACTORY PARA ASISTENCIA
 async function crearAsistencia(data = {}) {
   const comision = data.comisionId ? null : await crearComision();
   const estudiante = data.usuarioId ? null : await crearEstudiante();
@@ -117,6 +146,7 @@ async function crearAsistencia(data = {}) {
   });
 }
 
+// 🏫 FACTORY PARA AULA
 async function crearAula(data = {}) {
   let edificioId = data.edificioId;
   
@@ -135,6 +165,7 @@ async function crearAula(data = {}) {
   });
 }
 
+// ⏰ FACTORY PARA HORARIO
 async function crearHorario(data = {}) {
   const comision = data.comisionId ? null : await crearComision();
   const aula = data.aulaId ? null : await crearAula();
@@ -150,12 +181,13 @@ async function crearHorario(data = {}) {
   });
 }
 
+// 📇 FACTORY PARA MATRÍCULA
 async function crearMatricula(data = {}) {
   const estudiante = data.estudianteDni ? null : await crearEstudiante();
   const comision = data.comisionId ? null : await crearComision();
 
   return Matricula.create({
-    estudianteDni: data.estudianteDni || estudiante.dni,
+    studentDni: data.estudianteDni || estudiante.dni,
     comisionId: data.comisionId || comision.comisionId,
     ...data
   });
@@ -163,6 +195,7 @@ async function crearMatricula(data = {}) {
 
 module.exports = {
   crearUsuario,
+  crearUsuarioConEmail, // <-- Exportado con éxito
   crearEdificio,
   crearMateria,
   crearProfesor,
