@@ -31,6 +31,7 @@ const qrRoutes          = require("./routes/qr");
 const diaSinClaseRoutes = require("./routes/diaSinClase");
 const guaraniRoutes     = require("./routes/guarani");
 const reporteRoutes     = require("./routes/reporte");
+const reservasRoutes    = require("./routes/reservas");
 
 const app = express();
 
@@ -141,6 +142,7 @@ app.use("/api/asistencias", jwtAuth, asistenciasRoutes);
 app.use("/api/diaSinClase", jwtAuth, diaSinClaseRoutes);
 app.use("/api/guarani", jwtAuth, guaraniRoutes);
 app.use("/api/reportes",jwtAuth ,reporteRoutes);
+app.use("/api/reservas", jwtAuth, reservasRoutes);
 
 // ── Estudiantes ──────────────────────────────────────────────
 
