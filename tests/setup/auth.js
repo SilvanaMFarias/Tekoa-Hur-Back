@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 
+// FUNCION PARA GENERAR TOKEN DE ADMINISTRADOR
 function generarTokenAdmin() {
   return jwt.sign(
     {

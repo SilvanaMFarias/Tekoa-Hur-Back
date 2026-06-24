@@ -30,7 +30,7 @@ jobs:
 
     env:
       NODE_ENV: test
-
+      TZ: "America/Argentina/Buenos_Aires"
       DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: tekoadb_test

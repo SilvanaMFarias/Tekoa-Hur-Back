@@ -1,32 +1,27 @@
 require("../setup/test-db");
 
 const request = require("supertest");
-const bcrypt = require("bcryptjs");
-
 const app = require("../../app");
 const { Usuario } = require("../../models");
+const { crearUsuario } = require("../setup/factories"); // Importamos tu factory
 
 describe("PUT /api/auth/cambiar-password", () => {
-
   let token;
 
   beforeEach(async () => {
+    // Limpieza para evitar colisiones de DNI único
+    await Usuario.destroy({ where: {}, cascade: true, force: true });
 
-    const passwordHash = await bcrypt.hash(
-      "admin123",
-      10
-    );
-
-    await Usuario.create({
+    // Se usa el factory para crear el usuario administrador
+    // paso una password fija para poder usarla en el login del test
+    await crearUsuario({
       dni: "12345678",
-      nombre: "Admin Test",
-      email: "admin@test.com",
-      password: passwordHash,
+      password: "admin123",
       rol: "administrador",
-      referenciaId: "12345678",
-      activo: true,
+      nombre: "Admin Test"
     });
 
+    // login para obtener el token real del ciclo de la app
     const loginResponse = await request(app)
       .post("/api/auth/login")
       .send({
@@ -35,11 +30,9 @@ describe("PUT /api/auth/cambiar-password", () => {
       });
 
     token = loginResponse.body.token;
-
   });
 
   it("debería cambiar la contraseña correctamente", async () => {
-
     const response = await request(app)
       .put("/api/auth/cambiar-password")
       .set("Authorization", `Bearer ${token}`)
@@ -49,14 +42,10 @@ describe("PUT /api/auth/cambiar-password", () => {
       });
 
     expect(response.statusCode).toBe(200);
-
-    expect(response.body.message)
-      .toContain("actualizada");
-
+    expect(response.body.message).toContain("actualizada");
   });
 
   it("debería rechazar password actual incorrecta", async () => {
-
     const response = await request(app)
       .put("/api/auth/cambiar-password")
       .set("Authorization", `Bearer ${token}`)
@@ -66,11 +55,9 @@ describe("PUT /api/auth/cambiar-password", () => {
       });
 
     expect(response.statusCode).toBe(401);
-
   });
 
   it("debería validar longitud mínima", async () => {
-
     const response = await request(app)
       .put("/api/auth/cambiar-password")
       .set("Authorization", `Bearer ${token}`)
@@ -80,7 +67,5 @@ describe("PUT /api/auth/cambiar-password", () => {
       });
 
     expect(response.statusCode).toBe(400);
-
   });
-
 });

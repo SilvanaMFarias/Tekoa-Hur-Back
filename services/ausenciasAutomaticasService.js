@@ -20,7 +20,7 @@ const guaraniService = require("./guaraniService");
  * Período académico de Tekoa obtenido desde variables de entorno.
  * Si no existe la variable se utiliza el valor 256.
  */
-const PERIODO_TEKOA = process.env.GUARANI_PERIODO_TEKOA || "256";
+const PERIODO_TEKOA = process.env.GUARANI_ || "256";
 
 /**
  * Zona horaria utilizada para todas las comparaciones de fechas y horarios.
