@@ -32,6 +32,7 @@ const diaSinClaseRoutes = require("./routes/diaSinClase");
 const guaraniRoutes     = require("./routes/guarani");
 const reporteRoutes     = require("./routes/reporte");
 const reservasRoutes    = require("./routes/reservas");
+const historialImportacionRoutes = require("./routes/historialImportacion");
 
 const app = express();
 
@@ -190,6 +191,14 @@ app.use(
   jwtAuth,
   requireRole("administrador"),
   importarRoutes
+);
+
+// ── Historial de importaciones ───────────────────────────────
+app.use(
+  "/api/historial-importaciones",
+  jwtAuth,
+  requireRole("administrador"),
+  historialImportacionRoutes
 );
 
 // ── Swagger ──────────────────────────────────────────────────
