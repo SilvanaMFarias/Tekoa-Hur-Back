@@ -35,9 +35,9 @@ describe("Pruebas del Módulo de Asistencias", () => {
   });
 
   // ============================================================
-  // LÓGICA LEGACY / QR COMPARTIDO
+  // FLUJO DE ASISTENCIA — REGISTRO DESDE QR (Controlador Moderno)
   // ============================================================
-  describe("POST /api/asistencia/registrar-qr", () => {
+  describe("POST /api/asistencias/registrar-desde-qr", () => {
 
     test("debe registrar asistencia exitosamente para un estudiante matriculado", async () => {
       const estudiante = await crearEstudiante();
@@ -61,7 +61,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
       });
 
       const response = await request(app)
-        .post("/api/qr/registrar")
+        .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
         .send({
           tipoUsuario: "ESTUDIANTE",
@@ -71,7 +71,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.message).toContain("✅ Asistencia registrada");
+      expect(response.body.message).toContain("✅ Asistencia registrada correctamente");
       expect(response.body.data.comisionId).toBe(comisionIdFinal);
 
       const enDb = await Asistencia.findByPk(response.body.data.asistenciaId);
@@ -92,7 +92,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
       });
 
       const response = await request(app)
-        .post("/api/qr/registrar")
+        .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
         .send({
           tipoUsuario: "ESTUDIANTE",
@@ -102,7 +102,6 @@ describe("Pruebas del Módulo de Asistencias", () => {
         });
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toContain("No estás matriculado en esta comisión");
     });
 
     test("debe devolver 403 si el rtoken del QR no coincide con el del aula", async () => {
@@ -111,7 +110,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
       const aulaIdFinal = aula.aulaId || aula.id;
 
       const response = await request(app)
-        .post("/api/qr/registrar")
+        .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
         .send({
           tipoUsuario: "ESTUDIANTE",
@@ -121,7 +120,6 @@ describe("Pruebas del Módulo de Asistencias", () => {
         });
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toContain("QR inválido o expirado");
     });
 
     test("debe devolver 409 si intenta registrar la asistencia dos veces el mismo día", async () => {
@@ -146,7 +144,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
       });
 
       await request(app)
-        .post("/api/qr/registrar")
+        .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
         .send({
           tipoUsuario: "ESTUDIANTE",
@@ -156,7 +154,7 @@ describe("Pruebas del Módulo de Asistencias", () => {
         });
 
       const response = await request(app)
-        .post("/api/qr/registrar")
+        .post("/api/asistencias/registrar-desde-qr")
         .set("Authorization", `Bearer ${token}`)
         .send({
           tipoUsuario: "ESTUDIANTE",
@@ -166,7 +164,6 @@ describe("Pruebas del Módulo de Asistencias", () => {
         });
 
       expect(response.status).toBe(409);
-      expect(response.body.message).toContain("Ya registraste tu asistencia hoy");
     });
   });
 

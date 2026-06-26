@@ -1,17 +1,20 @@
 const request = require("supertest");
+require("../setup/test-db"); 
 const app = require("../../app");
-const { EspacioQR, Aula, AulaAtributos } = require("../../models");
-const { crearAula } = require("../setup/factories");
+const { EspacioQR, Aula, AulaAtributos,Edificio } = require("../../models");
+const { crearAula,crearEdificio } = require("../setup/factories");
 const { generarTokenAdmin } = require("../setup/auth");
 const crypto = require("crypto");
 
 describe("Pruebas de Integración Reales - EspacioQR", () => {
   let aulaReal;
   let tokenAdmin;
-
+  let edificioReal;
   beforeEach(async () => {
     // Generar datos base reales usando tus factories transparentes
-    aulaReal = await crearAula();
+    edificioReal = await crearEdificio({ nombre: "Edificio de Prueba" });
+    const idEdificio = edificioReal.id || edificioReal.edificioId;
+    aulaReal = await crearAula({ edificioId: idEdificio });
     tokenAdmin = generarTokenAdmin();
   });
 

@@ -1,3 +1,4 @@
+require("../setup/test-db");
 const request = require("supertest");
 const app = require("../../app");
 const { Aula, Edificio } = require("../../models");
@@ -8,22 +9,20 @@ describe("Pruebas de Integración Reales - Aula Controller", () => {
   let token;
   let edificioA;
   let edificioB;
-  let idEdificioA; // Guardamos el ID unificado acá
-  let idEdificioB; // Guardamos el ID unificado acá
+  let idEdificioA; 
+  let idEdificioB; 
   let aula1;
   let aula2;
   let aula3;
 
-  // es complemento al factory, ya que evita duplicacion del codigo y evita contaminacion de la bdd
   beforeEach(async () => {
     // 1. Generar token de autenticación
     token = generarTokenAdmin();
 
-    // 2. Limpieza estricta de filas en cascada para evitar Locks en Postgres
-    await Aula.destroy({ where: {}, cascade: true, force: true });
-    await Edificio.destroy({ where: {}, cascade: true, force: true });
+    // REMOVIDO: Ya no se ejecutan los .destroy() manuales aquí. 
+    // El setup global de test-db ya vacía la base de datos de forma segura.
 
-    // 3. Crear el escenario de pruebas con las factories reales
+    // 2. Crear el escenario de pruebas con las factories reales
     edificioA = await crearEdificio({ nombre: "Pabellón de Ingeniería" });
     edificioB = await crearEdificio({ nombre: "Pabellón de Diseño" });
 
