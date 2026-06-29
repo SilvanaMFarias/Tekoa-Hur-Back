@@ -90,8 +90,8 @@ class ReservaService {
     // Aplica la misma lógica de solapamiento de intervalos:
     // queremos reservas que se crucen con [desde, hasta].
     if (filtros.desde && filtros.hasta) {
-      where.fechaInicio = { [Op.lt]: filtros.hasta };
-      where.fechaFin = { [Op.gt]: filtros.desde };
+      where.fechaInicio = { [Op.lt]: filtros.hasta }; // A.inicio < B.fin
+      where.fechaFin = { [Op.gt]: filtros.desde }; // A.fin > B.inicio
     }
 
     return Reserva.findAll({
@@ -549,6 +549,8 @@ class ReservaService {
             cursadaFin.setHours(hHastaH, hHastaM, 0, 0);
 
             // APLICAMOS EL ALGORITMO DE SOLAPAMIENTO
+            // Para cada cursada, expande el horario recurrente a fechas concretas y aplica la fórmula 
+            // contra el rango propuesto.
             if (cursadaInicio < fin && cursadaFin > inicio) {
               conflictos.push({
                 tipo: "cursada",
@@ -581,15 +583,16 @@ class ReservaService {
       estado: "confirmada", // las canceladas no cuentan
       // Condición de solapamiento traducida a Sequelize:
       // fechaInicio < fin  AND  fechaFin > inicio
-      fechaInicio: { [Op.lt]: fin },
-      fechaFin: { [Op.gt]: inicio },
+      fechaInicio: { [Op.lt]: fin },  // operador de sequelize equivalente a <
+      fechaFin: { [Op.gt]: inicio }, // operador de sequelize equivalente a >
     };
 
     // Si estamos editando, excluir la reserva actual
     if (reservaIdExcluir) {
       where.reservaId = { [Op.ne]: reservaIdExcluir };
     }
-
+    //  Una sola query SQL que devuelve todas las reservas que se cruzan. 
+    // PostgreSQL ejecuta la condición de solapamiento directamente.
     const reservas = await Reserva.findAll({
       where,
       include: [
