@@ -65,6 +65,15 @@ module.exports = (sequelize) => {
         },
 
         /**
+         * Contenido del archivo Excel importado.
+         * Se almacena para permitir su descarga desde el historial de importaciones.
+         */
+        archivo: {
+            type: DataTypes.BLOB,
+            allowNull: false
+        },
+  
+        /**
          * Descripción opcional de la importación.
          */
         descripcion: {

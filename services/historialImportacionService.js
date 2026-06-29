@@ -46,7 +46,10 @@ class HistorialImportacionService {
              * Se almacena como JSON para evitar crear
              * columnas específicas por cada tipo de carga.
              */
-            detalle: datos.detalle
+            detalle: datos.detalle,
+
+            /** Archivo Excel importado.*/
+            archivo: datos.archivo
         });
 
         return historial;

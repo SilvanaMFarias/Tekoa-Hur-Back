@@ -287,7 +287,8 @@ exports.confirmar = async (req, res) => {
           ? 'ERROR'
           : 'EXITOSA',
         cantidadErrores: resultados.errores.length,
-        detalle: resultados
+        detalle: resultados,
+        archivo: req.file.buffer
       });
 
     } catch (error) {
