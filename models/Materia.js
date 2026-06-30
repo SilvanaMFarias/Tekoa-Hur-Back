@@ -3,30 +3,33 @@ const { Model, DataTypes } = require('sequelize');
 class Materia extends Model {
   static associate(models) {
     // Una materia puede tener muchas comisiones (ej: Mañana, Tarde, Noche)
-    Materia.hasMany(models.Comision, { 
-      foreignKey: 'subjectId', 
-      as: 'comisiones' 
+    // FIX: el foreignKey era "subjectId" (legacy/inglés) pero la columna
+    // real en la tabla comisiones es "materiaId". Sin este fix, el include
+    // de comisiones no funciona desde Materia.
+    Materia.hasMany(models.Comision, {
+      foreignKey: 'materiaId',
+      as: 'comisiones',
     });
   }
 }
 
 module.exports = (sequelize) => {
   Materia.init({
-    materiaId: { 
-      type: DataTypes.UUID, 
-      defaultValue: DataTypes.UUIDV4, 
-      primaryKey: true 
+    materiaId: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-    nombre: { 
-      type: DataTypes.STRING, 
+    nombre: {
+      type: DataTypes.STRING,
       allowNull: false,
-      unique: true // Evita tener dos materias con el mismo nombre
-    }
+      unique: true, // Evita tener dos materias con el mismo nombre
+    },
   }, {
     sequelize,
     modelName: 'Materia',
     tableName: 'materias',
-    timestamps: false
+    timestamps: false,
   });
   return Materia;
 };
