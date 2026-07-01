@@ -96,7 +96,7 @@ class MatriculaService {
   }
 
   // ============================================================
-  // CAMBIAR de comisión ⭐ MÉTODO CLAVE
+  // CAMBIAR de comisión MÉTODO CLAVE
   // ============================================================
   /**
    * Cambia un alumno de una comisión a otra DE LA MISMA MATERIA.
