@@ -1,4 +1,4 @@
-const { HistorialImportacion } = require('../models');
+const { HistorialImportacion, Usuario } = require('../models');
 
 class HistorialImportacionService {
 
@@ -59,13 +59,40 @@ class HistorialImportacionService {
     static async listar() {
 
         return await HistorialImportacion.findAll({
+            /** Excluye el archivo de la respuesta. Para evitar cargar datos innecesarios. */
+            attributes: {
+                exclude: ["archivo"]
+            },
+            include: [
+                {
+                    model: Usuario,
+                    as: "usuario",
+                    attributes: [
+                        "nombre",
+                    ]
+                }
+            ],
 
             order: [
                 ['fechaEjecucion', 'DESC']
             ]
-
         });
 
+    }
+    /**
+     * Obtiene el archivo original asociado a una importación.
+     * Este método se utiliza para permitir la descarga del Excel
+     * que fue utilizado durante la importación.
+     *
+     * @param {string} historialId Identificador de la importación.
+     * @returns {Promise<HistorialImportacion>}
+     */
+    static async obtenerArchivo(historialId) {
+        const historial = await HistorialImportacion.findByPk(historialId);
+        if (!historial) {
+            throw new Error("Importación no encontrada.");
+        }
+        return historial;
     }
 }
 
