@@ -59,11 +59,13 @@ class HistorialImportacionService {
     static async listar() {
 
         return await HistorialImportacion.findAll({
-
+            /** Excluye el archivo de la respuesta. Para evitar cargar datos innecesarios. */
+            attributes: {
+                exclude: ["archivo"]
+            },
             order: [
                 ['fechaEjecucion', 'DESC']
             ]
-
         });
 
     }
