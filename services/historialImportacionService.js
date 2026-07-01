@@ -79,6 +79,21 @@ class HistorialImportacionService {
         });
 
     }
+    /**
+     * Obtiene el archivo original asociado a una importación.
+     * Este método se utiliza para permitir la descarga del Excel
+     * que fue utilizado durante la importación.
+     *
+     * @param {string} historialId Identificador de la importación.
+     * @returns {Promise<HistorialImportacion>}
+     */
+    static async obtenerArchivo(historialId) {
+        const historial = await HistorialImportacion.findByPk(historialId);
+        if (!historial) {
+            throw new Error("Importación no encontrada.");
+        }
+        return historial;
+    }
 }
 
 module.exports = HistorialImportacionService;

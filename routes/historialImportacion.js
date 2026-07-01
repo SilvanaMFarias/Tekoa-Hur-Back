@@ -29,4 +29,9 @@ router.get(
     historialImportacionController.listar
 );
 
+router.get(
+    "/:historialId/archivo",
+    historialImportacionController.descargarArchivo
+);
+
 module.exports = router;
