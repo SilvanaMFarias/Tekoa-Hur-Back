@@ -1,4 +1,4 @@
-const { HistorialImportacion } = require('../models');
+const { HistorialImportacion, Usuario } = require('../models');
 
 class HistorialImportacionService {
 
@@ -63,6 +63,16 @@ class HistorialImportacionService {
             attributes: {
                 exclude: ["archivo"]
             },
+            include: [
+                {
+                    model: Usuario,
+                    as: "usuario",
+                    attributes: [
+                        "nombre",
+                    ]
+                }
+            ],
+
             order: [
                 ['fechaEjecucion', 'DESC']
             ]
