@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:22-bookworm
 
 WORKDIR /app
 
@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD sh -c "node sync.js && node index.js"
+CMD ["sh", "-c", "node sync.js && npm start"]
