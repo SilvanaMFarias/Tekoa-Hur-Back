@@ -27,3 +27,12 @@ jobs:
 
       - name: Build
         run: npm run build || echo "no build necesario"
+      
+      #para correr los tests y generar el reporte de cobertura
+      - name: Ejecutar Tests con Cobertura 
+        run: npm run test
+      
+      - name: Subir reporte a Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
