@@ -4,7 +4,7 @@
 const fs = require("fs");
 
 describe("Script encodeBasicAuth.js", () => {
-  let mockExit, mockLog, mockError;
+  let mockExit, mockLog, mockError, mockReadFileSync;
   let originalArgv;
 
   beforeEach(() => {
@@ -16,6 +16,12 @@ describe("Script encodeBasicAuth.js", () => {
     mockLog = jest.spyOn(console, "log").mockImplementation(() => {});
     mockError = jest.spyOn(console, "error").mockImplementation(() => {});
     
+    // FIX GLOBAL: Mockeamos fs.readFileSync por defecto para todos los tests.
+    // De esta forma, si el script lee el archivo al inicio, no explota con ENOENT.
+    mockReadFileSync = jest.spyOn(fs, "readFileSync").mockReturnValue(
+      JSON.stringify({ admin: "1234" })
+    );
+    
     jest.clearAllMocks();
   });
 
@@ -26,6 +32,7 @@ describe("Script encodeBasicAuth.js", () => {
     mockExit.mockRestore();
     mockLog.mockRestore();
     mockError.mockRestore();
+    mockReadFileSync.mockRestore(); // Restauramos el mock de fs
     jest.resetModules(); // Clave para volver a requerir el script en cada test
   });
 
@@ -33,7 +40,7 @@ describe("Script encodeBasicAuth.js", () => {
     // Simulamos que corremos: node encodeBasicAuth.js (sin argumentos)
     process.argv = ["node", "encodeBasicAuth.js"];
 
-    // Ejecutamos el archivo
+    // Ejecutamos el archivo (ahora el fs de arriba evita que explote)
     require("../../encodeBasicAuth");
 
     expect(mockError).toHaveBeenCalledWith("Uso: node encodeBasicAuth.js <usuario>");
@@ -44,22 +51,19 @@ describe("Script encodeBasicAuth.js", () => {
     // Simulamos que pasamos un usuario inexistente
     process.argv = ["node", "encodeBasicAuth.js", "usuarioInexistente"];
     
-    // Mockeamos la lectura del json para que devuelva un usuario válido pero distinto
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify({ admin: "1234" }));
-
+    // Ya está mockeado en el beforeEach devolviendo { admin: "1234" }
     require("../../encodeBasicAuth");
 
     expect(mockError).toHaveBeenCalledWith("Usuario no encontrado en users.json");
-    expect(mockExit).not.toHaveBeenCalled();
+    // Si tu script real tira un process.exit(1) cuando no encuentra el usuario, cambiá este expect a .toHaveBeenCalledWith(1)
+    expect(mockExit).not.toHaveBeenCalled(); 
   });
 
   it("debe generar correctamente el header si el usuario existe", () => {
     // Simulamos que pasamos el usuario 'admin'
     process.argv = ["node", "encodeBasicAuth.js", "admin"];
     
-    // Forzamos el contenido controlado de users.json
-    jest.spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify({ admin: "1234" }));
-
+    // Ya está mockeado en el beforeEach devolviendo { admin: "1234" }
     require("../../encodeBasicAuth");
 
     // Base64 de admin:1234 -> YWRtaW46MTIzNA==

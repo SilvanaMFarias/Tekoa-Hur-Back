@@ -76,8 +76,9 @@ describe("Tests Unitarios/Funcionales - ausenciasAutomaticasService", () => {
         });
 
         // 4. Crear alumnos y asociarlos usando tu propia factory de Matrícula 
-        const alumno1 = await crearEstudiante({ dni: "11111111" });
-        const alumno2 = await crearEstudiante({ dni: "22222222" });
+        // Inyectamos de forma redundante los IDs para evitar violaciones de clave foránea en bulkCreate
+        const alumno1 = await crearEstudiante({ dni: "11111111", usuarioId: "11111111", estudianteDni: "11111111", alumnoDni: "11111111" });
+        const alumno2 = await crearEstudiante({ dni: "22222222", usuarioId: "22222222", estudianteDni: "22222222", alumnoDni: "22222222" });
 
         await crearMatricula({ comisionId: comision.comisionId, estudianteDni: alumno1.dni });
         await crearMatricula({ comisionId: comision.comisionId, estudianteDni: alumno2.dni });
