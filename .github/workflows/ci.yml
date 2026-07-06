@@ -43,10 +43,11 @@ jobs:
       - name: Build
         run: npm run build || echo "no build necesario"
             
-      # INYECTAMOS TU CONFIGURACIÓN USANDO 127.0.0.1 (PARA EL FIX DE ::1)
+      # Agregamos TZ acá para que coincidan las horas locales de Argentina
       - name: Ejecutar Tests con Cobertura 
         env:
           NODE_ENV: test
+          TZ: America/Argentina/Buenos_Aires
           PORT: 3002
           DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tekoadb_test
           FRONTEND_URL: http://localhost:3000
