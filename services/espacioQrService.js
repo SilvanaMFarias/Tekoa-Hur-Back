@@ -155,13 +155,14 @@ class EspacioQrService {
     });
 
     if (!qr) {
-      throw AppError.forbidden("QR inválido o desactivado", "INVALID_QR");
+      throw AppError.forbidden("QR inválido o desactivado", "INVALID_QR"); //arreglar 404
     }
 
     // Intentar cargar atributos si existen (puede no haber)
     const { AulaAtributos } = require("../models");
     const atributos = await AulaAtributos.findByPk(qr.aulaId);
 
+    // acomodar por tema de funcionalidad include.. y agregar un left join
     return {
       aula: {
         aulaId: qr.aula.aulaId,
