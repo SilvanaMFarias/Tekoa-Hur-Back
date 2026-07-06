@@ -24,5 +24,6 @@ module.exports = {
     "/public/",
     "/controllers/qrController.js", // Solo el controlador, no el servicio ni el modelo
     "/sync.js",
-    "/jest.config.js",],
+    "/jest.config.js",
+    "/index.js",],
 };

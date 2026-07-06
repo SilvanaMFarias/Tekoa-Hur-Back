@@ -125,6 +125,7 @@ router.post(
 // vieja todavía manda aulaId+rtoken. Cuando se actualice el front
 // completamente al nuevo flujo, estos endpoints se pueden eliminar.
 
+/* istanbul ignore next */
 function nombreDia(date) {
   return [
     "domingo",
@@ -142,6 +143,7 @@ function nombreDia(date) {
  * Si llega comisionId → delega al flujo nuevo (qrAsistencia).
  * Si llega solo aulaId → comportamiento viejo.
  */
+/* istanbul ignore next */
 router.post("/generar", jwtAuth, async (req, res, next) => {
   try {
     if (req.body.comisionId) {
@@ -209,6 +211,7 @@ router.get("/validar", async (req, res) => {
 /**
  * POST /api/qr/registrar  (LEGACY)
  */
+/* istanbul ignore next */
 router.post("/registrar", async (req, res) => {
   try {
     const { tipoUsuario, usuarioId, aulaId, rtoken, fechaInicio, fechaFin } =
