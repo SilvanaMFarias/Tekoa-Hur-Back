@@ -95,6 +95,10 @@ function parsearExcel(buffer) {
     const f = matriculacion[i];
     if (!f[0] || !f[1]) continue;
     estudiantes.push({
+      // Número de fila del Excel.
+      // Se suma 1 porque el índice comienza en 0 y otra fila corresponde al encabezado.
+      filaExcel: i + 1,
+
       nombre_apellido: String(f[0]).trim(),
       dni: String(f[1]).trim(),
       email: String(f[2]).trim(),
@@ -251,22 +255,32 @@ exports.confirmar = async (req, res) => {
     }
 
     // 6. Estudiantes + Matrículas + Usuario (password = DNI)
-    for (const e of estudiantes) {
-      if (!e.dni || e.dni === "undefined" || e.dni === "NaN") continue;
+    for (const estudiante of estudiantes) {
+      if (!estudiante.dni || estudiante.dni === "undefined" || estudiante.dni === "NaN") continue;
 
       const [estud, estCreated] = await Estudiante.findOrCreate({
-        where: { dni: e.dni },
-        defaults: { dni: e.dni, nombre_apellido: e.nombre_apellido },
+        where: { dni: estudiante.dni },
+        defaults: { dni: estudiante.dni, nombre_apellido: estudiante.nombre_apellido },
       });
       if (estCreated) resultados.estudiantes++;
 
-      const creado = await crearUsuarioSiNoExiste(e.dni, e.nombre_apellido, "alumno", e.email);
+      const creado = await crearUsuarioSiNoExiste(estudiante.dni, estudiante.nombre_apellido, "alumno", estudiante.email);
       if (creado) resultados.usuariosCreados++;
 
-      const comision = comisionMap[e.cod_comision];
+      const comision = comisionMap[estudiante.cod_comision];
       if (!comision) {
-        resultados.errores.push(`Comisión no encontrada para ${e.dni}: ${e.cod_comision}`);
-        continue;
+        // Se modifica para poder incorporar la fila del excel en el mensaje de error y poder identificarla más fácilmente.
+        //        resultados.errores.push(`Comisión no encontrada para ${estudiante.dni}: ${estudiante.cod_comision}`);
+        resultados.errores.push({
+          // Fila donde ocurrio el problema.
+          fila: estudiante.filaExcel,
+          // DNI del estudiante.
+          dni: estudiante.dni,
+          // Comision informada en el Excel.
+          comision: estudiante.cod_comision,
+          // Descripción del error.
+          mensaje: "Comisión no encontrada"
+        }); continue;
       }
       await Matricula.findOrCreate({
         where: { estudianteDni: estud.dni, comisionId: comision.comisionId },
