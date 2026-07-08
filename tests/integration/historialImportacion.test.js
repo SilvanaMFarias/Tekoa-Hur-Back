@@ -132,14 +132,6 @@ describe("Pruebas E2E del Módulo de Historial de Importaciones", () => {
           usuarioId: adminId,
         });
         
-        const adminId = usuarioAdmin.getDataValue("usuarioId");
-
-        const historial = await crearHistorial({
-          origen: "COMISIONES",
-          nombreArchivo: "comisiones_carga.xlsx",
-          archivo: buffer,
-          usuarioId: adminId,
-        });
 
         const response = await request(app)
           .get(
