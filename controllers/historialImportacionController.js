@@ -62,13 +62,12 @@ class HistorialImportacionController {
             // Insertar una nueva columna al comienzo.
             worksheet.spliceColumns(1, 0, ["Observación"]);
 
-            // Completar la columna únicamente en las filas
-            // que tuvieron errores.
-            historial.detalle.errores.forEach((error) => {
+            //si hay errores de importación, agregue la columna "Observación";
+            //si no hubo errores, descargue igualmente el Excel.
+            const errores = historial.detalle?.errores ?? [];
 
-                worksheet.getCell(`A${error.fila}`).value =
-                    error.mensaje;
-
+            errores.forEach((error) => {
+                worksheet.getCell(`A${error.fila}`).value = error.mensaje;
             });
 
             // Generar el nuevo archivo.
