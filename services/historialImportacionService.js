@@ -47,7 +47,6 @@ class HistorialImportacionService {
              * columnas específicas por cada tipo de carga.
              */
             detalle: datos.detalle,
-
             /** Archivo Excel importado.*/
             archivo: datos.archivo
         });

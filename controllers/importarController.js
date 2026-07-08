@@ -97,7 +97,7 @@ function parsearExcel(buffer) {
     estudiantes.push({
       // Número de fila del Excel.
       // Se suma 1 porque el índice comienza en 0 y otra fila corresponde al encabezado.
-      filaExcel: i + 1,
+      fila: i + 1,
 
       nombre_apellido: String(f[0]).trim(),
       dni: String(f[1]).trim(),
@@ -273,7 +273,7 @@ exports.confirmar = async (req, res) => {
         //        resultados.errores.push(`Comisión no encontrada para ${estudiante.dni}: ${estudiante.cod_comision}`);
         resultados.errores.push({
           // Fila donde ocurrio el problema.
-          fila: estudiante.filaExcel,
+          fila: estudiante.fila,
           // DNI del estudiante.
           dni: estudiante.dni,
           // Comision informada en el Excel.
