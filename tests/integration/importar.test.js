@@ -1,10 +1,10 @@
 const request = require("supertest");
 const app = require("../../app");
 const XLSX = require("xlsx");
-const { 
-  Edificio, Aula, Profesor, Materia, Comision, 
-  Horario, Estudiante, Matricula, Usuario 
-} =  require("../../models");
+const {
+  Edificio, Aula, Profesor, Materia, Comision,
+  Horario, Estudiante, Matricula, Usuario
+} = require("../../models");
 const { generarTokenAdmin } = require("../setup/auth"); // Ajustá la ruta a tu util de tokens
 
 // Helper para generar el Excel en memoria con la estructura exacta
@@ -36,14 +36,27 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
 
 
 
- beforeEach(async () => {
+  beforeEach(async () => {
     // 1. Recrear la base de datos limpia de forma segura y automática
     const { sequelize } = require("../../models"); // Asegurate de que la ruta a tus modelos sea correcta
     await sequelize.sync({ force: true });
 
+    const { Usuario } = require("../../models");
+    await Usuario.findOrCreate({
+      where: { id: "550e8400-e29b-41d4-a716-446655440000" },
+      defaults: {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        nombre: "Test Admin",
+        dni: "00000000",
+        rol: "admin",
+        // Añadir aquí los campos obligatorios del modelo Usuario (email, passwordHash, etc.)
+        // Si password no puede ser null, poner un hash de prueba o ajustar el modelo para tests.
+      },
+    });
+
     // 2. Generar token en caso de que tus rutas de administración estén protegidas
     token = generarTokenAdmin();
-    
+
     // 3. Generar un nuevo binario fresco de Excel antes de cada test
     excelBuffer = generarExcelMockBuffer();
   });
@@ -64,15 +77,15 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
       expect(res.body).toHaveProperty("comisiones");
       expect(res.body).toHaveProperty("estudiantes");
 
-     const { comisiones, estudiantes, edificios, materias } = res.body;
-      
+      const { comisiones, estudiantes, edificios, materias } = res.body;
+
       // Convertimos todo el cuerpo de la respuesta a un string plano
       const cuerpoTexto = JSON.stringify(res.body);
 
       // 1. Validamos que las listas tengan los datos esperados midiendo su existencia en el texto
       expect(cuerpoTexto).toContain("COM-101");
       expect(cuerpoTexto).toContain("Tomás Miranda");
-      
+
       // 2. Validamos de forma segura que el edificio y la materia estén presentes en la respuesta
       expect(cuerpoTexto).toContain("Bloque Central");
       expect(cuerpoTexto).toContain("Sistemas Operativos");
@@ -104,7 +117,7 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .expect(200);
 
       expect(res.body.mensaje).toMatch(/importación completada con éxito/i);
-      
+
       const { resultados } = res.body;
       expect(resultados.edificios).toBe(1);
       expect(resultados.aulas).toBe(1);
@@ -117,7 +130,7 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
       expect(resultados.errores.length).toBe(0);
 
       // Verificaciones Directas en la Base de Datos Relacional de Pruebas
-      
+
       // 1. Validar que el Edificio se creó correctamente
       const edificioDb = await Edificio.findOne({ where: { nombre: "Bloque Central" } });
       expect(edificioDb).not.toBeNull();
@@ -148,53 +161,53 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
     });
 
     it("debería procesar de forma idempotente (findOrCreate) la primera subida", async () => {
-    // Primera vuelta: Se asegura de que procese y cree los registros de forma normal
-    const resPrimera = await request(app)
-      .post("/api/importar/confirmar")
-      .set("Authorization", `Bearer ${token}`)
-      .attach("archivo", excelBuffer, "carga_academica.xlsx")
-      .expect(200);
+      // Primera vuelta: Se asegura de que procese y cree los registros de forma normal
+      const resPrimera = await request(app)
+        .post("/api/importar/confirmar")
+        .set("Authorization", `Bearer ${token}`)
+        .attach("archivo", excelBuffer, "carga_academica.xlsx")
+        .expect(200);
 
-    // Verificamos que en la primera subida sí cree entidades
-    expect(resPrimera.body.resultados.profesores).toBeGreaterThan(0);
-    expect(resPrimera.body.resultados.estudiantes).toBeGreaterThan(0);
-  });
+      // Verificamos que en la primera subida sí cree entidades
+      expect(resPrimera.body.resultados.profesores).toBeGreaterThan(0);
+      expect(resPrimera.body.resultados.estudiantes).toBeGreaterThan(0);
+    });
 
- it("debería devolver 0 en contadores si se sube el mismo archivo por segunda vez consecutiva", async () => {
-    // 1. Primera subida (crea todo)
-    await request(app)
-      .post("/api/importar/confirmar")
-      .set("Authorization", `Bearer ${token}`)
-      .attach("archivo", excelBuffer, "carga_academica.xlsx")
-      .expect(200);
+    it("debería devolver 0 en contadores si se sube el mismo archivo por segunda vez consecutiva", async () => {
+      // 1. Primera subida (crea todo)
+      await request(app)
+        .post("/api/importar/confirmar")
+        .set("Authorization", `Bearer ${token}`)
+        .attach("archivo", excelBuffer, "carga_academica.xlsx")
+        .expect(200);
 
-    // Guardamos la cantidad de profesores que quedaron en la BD real
-    const totalProfesoresPrimera = await Profesor.count();
-    const totalEstudiantesPrimera = await Estudiante.count();
+      // Guardamos la cantidad de profesores que quedaron en la BD real
+      const totalProfesoresPrimera = await Profesor.count();
+      const totalEstudiantesPrimera = await Estudiante.count();
 
-    // 2. Segunda subida idéntica
-    const resSegunda = await request(app)
-      .post("/api/importar/confirmar")
-      .set("Authorization", `Bearer ${token}`)
-      .attach("archivo", excelBuffer, "carga_academica.xlsx")
-      .expect(200);
+      // 2. Segunda subida idéntica
+      const resSegunda = await request(app)
+        .post("/api/importar/confirmar")
+        .set("Authorization", `Bearer ${token}`)
+        .attach("archivo", excelBuffer, "carga_academica.xlsx")
+        .expect(200);
 
-    // Guardamos la cantidad después de la segunda vuelta
-    const totalProfesoresSegunda = await Profesor.count();
-    const totalEstudiantesSegunda = await Estudiante.count();
+      // Guardamos la cantidad después de la segunda vuelta
+      const totalProfesoresSegunda = await Profesor.count();
+      const totalEstudiantesSegunda = await Estudiante.count();
 
-    // VALIDACIÓN REAL DE IDEMPOTENCIA: 
-    // La cantidad absoluta en la base de datos NO tuvo que haber aumentado.
-    expect(totalProfesoresSegunda).toBe(totalProfesoresPrimera);
-    expect(totalEstudiantesSegunda).toBe(totalEstudiantesPrimera);
-    
-    // Validamos que la respuesta del servidor sea exitosa
-    expect(resSegunda.body).toHaveProperty("resultados");
-  });
+      // VALIDACIÓN REAL DE IDEMPOTENCIA: 
+      // La cantidad absoluta en la base de datos NO tuvo que haber aumentado.
+      expect(totalProfesoresSegunda).toBe(totalProfesoresPrimera);
+      expect(totalEstudiantesSegunda).toBe(totalEstudiantesPrimera);
+
+      // Validamos que la respuesta del servidor sea exitosa
+      expect(resSegunda.body).toHaveProperty("resultados");
+    });
 
     it("debería agregar un error controlado en el reporte si un estudiante apunta a una comisión inexistente en el Excel", async () => {
       const wbInvalido = XLSX.utils.book_new();
-      
+
       // Comisiones vacías o sin la comisión que usará el alumno
       const wsComisiones = XLSX.utils.aoa_to_sheet([
         ["cod_comision", "docente_nombre", "docente_dni", "docente_email", "horaDesde", "horaHasta", "espacio", "edificio", "actividad", "dia"]
