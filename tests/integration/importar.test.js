@@ -41,19 +41,6 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
     const { sequelize } = require("../../models"); // Asegurate de que la ruta a tus modelos sea correcta
     await sequelize.sync({ force: true });
 
-    const { Usuario } = require("../../models");
-    await Usuario.findOrCreate({
-      where: { id: "550e8400-e29b-41d4-a716-446655440000" },
-      defaults: {
-        id: "550e8400-e29b-41d4-a716-446655440000",
-        nombre: "Test Admin",
-        dni: "00000000",
-        rol: "admin",
-        // Añadir aquí los campos obligatorios del modelo Usuario (email, passwordHash, etc.)
-        // Si password no puede ser null, poner un hash de prueba o ajustar el modelo para tests.
-      },
-    });
-
     // 2. Generar token en caso de que tus rutas de administración estén protegidas
     token = generarTokenAdmin();
 
@@ -71,6 +58,9 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .set("Authorization", `Bearer ${token}`)
         .attach("archivo", excelBuffer, "carga_academica.xlsx") // Envío binario multipart/form-data
         .expect(200);
+
+
+
 
       // Validar estructura del objeto de previsualización
       expect(res.body).toHaveProperty("resumen");
@@ -229,9 +219,18 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .set("Authorization", `Bearer ${token}`)
         .expect(200);
 
-      // El controlador atrapa la falta de comisión metiéndola en el array de errores
+
+      console.log(JSON.stringify(res.body.resultados.errores, null, 2));      // El controlador atrapa la falta de comisión metiéndola en el array de errores
       expect(res.body.resultados.errores.length).toBeGreaterThan(0);
-      expect(res.body.resultados.errores[0]).toContain("Comisión no encontrada para 99888777: COM-999");
+      
+      const error = res.body.resultados.errores[0];
+
+      expect(error).toMatchObject({
+        fila: 2,
+        dni: "99888777",
+        comision: "COM-999",
+        mensaje: "Comisión no encontrada",
+      });
     });
   });
 });
