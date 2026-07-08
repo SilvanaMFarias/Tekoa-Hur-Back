@@ -462,4 +462,201 @@ describe("Pruebas del Módulo de Asistencias", () => {
   expect(errorContenido).toMatch(/Ruta no encontrada/i);
 });
   });
+
+  // ============================================================
+  // RUTAS CRUD BASE (Para cubrir router.get, router.post, etc.)
+  // ============================================================
+  describe("Rutas CRUD Base (AsistenciaController)", () => {
+    test("GET /api/asistencias/:id - debe responder la ruta de detalle", async () => {
+      const estudiante = await crearEstudiante();
+      const comision = await crearComision();
+      
+      const asistencia = await Asistencia.create({
+        usuarioId: estudiante.dni,
+        tipoUsuario: "ESTUDIANTE",
+        comisionId: comision.comisionId || comision.id,
+        fecha: "2026-06-01",
+        horaRegistro: "19:30",
+        estado: "PRESENTE"
+      });
+
+      const response = await request(app)
+        .get(`/api/asistencias/${asistencia.asistenciaId || asistencia.id}`)
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).not.toBe(404); // Asegura que la ruta existe y fue alcanzada
+    });
+
+    test("POST /api/asistencias - debe fallar si faltan campos requeridos (Middlewares)", async () => {
+      const response = await request(app)
+        .post("/api/asistencias")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ tipoUsuario: "ESTUDIANTE" }); // Faltan un montón de campos
+
+      expect(response.status).toBe(400); // El validateRequiredFields debería frenarlo
+    });
+  });
+
+  // ============================================================
+  // POST /api/asistencias/docente-presente
+  // ============================================================
+  describe("POST /api/asistencias/docente-presente", () => {
+    test("debe retornar 400 si falta el comisionId", async () => {
+      const response = await request(app)
+        .post("/api/asistencias/docente-presente")
+        .set("Authorization", `Bearer ${token}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toMatch(/comisionId es requerido/i);
+    });
+
+    test("debe retornar 404 si la comisión no existe", async () => {
+      const response = await request(app)
+        .post("/api/asistencias/docente-presente")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ comisionId: "00000000-0000-0000-0000-000000000000" });
+
+      expect(response.status).toBe(404);
+    });
+
+    // Descomenta y ajusta este test si tu factory permite mockear el token del profesor
+    /*
+    test("debe registrar presencia del docente correctamente", async () => {
+      const profesor = await Profesor.create({ dni: "88888888", nombre: "Profe Prueba" });
+      const comision = await crearComision();
+      const comisionIdFinal = comision.comisionId || comision.id;
+      
+      await comision.update({ profesorId: profesor.id }); // Asignar titular
+
+      await crearHorario({
+        comisionId: comisionIdFinal,
+        diaSemana: "lunes",
+        horaDesde: "18:00",
+        horaHasta: "22:00"
+      });
+
+      // Asegúrate de que el token enviado pertenezca al profesor con DNI 88888888
+      const tokenProfesor = generarToken({ dni: "88888888", rol: "PROFESOR" }); 
+
+      const response = await request(app)
+        .post("/api/asistencias/docente-presente")
+        .set("Authorization", `Bearer ${tokenProfesor}`)
+        .send({ comisionId: comisionIdFinal });
+
+      expect(response.status).toBe(201);
+      expect(response.body.message).toContain("Presencia registrada");
+    });
+    */
+  });
+
+  // ============================================================
+  // POST /api/asistencias/confirmar-dia
+  // ============================================================
+  describe("POST /api/asistencias/confirmar-dia", () => {
+    test("debe retornar 400 si faltan datos obligatorios", async () => {
+      const response = await request(app)
+        .post("/api/asistencias/confirmar-dia")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ fecha: "2026-06-01" }); // Falta comisionId y asistencias
+
+      expect(response.status).toBe(400);
+    });
+
+    test("debe crear y actualizar asistencias masivamente y limpiar el rtoken del aula", async () => {
+      const comision = await crearComision();
+      const aula = await crearAula({ rtoken: "AULA_ACTIVA", rtokenExpira: new Date() });
+      const estudianteNuevo = await crearEstudiante();
+      const estudianteExistente = await crearEstudiante();
+      
+      const comisionIdFinal = comision.comisionId || comision.id;
+      const aulaIdFinal = aula.aulaId || aula.id;
+
+      // Creamos un registro previo para forzar el path de "update"
+      await Asistencia.create({
+        usuarioId: estudianteExistente.dni,
+        tipoUsuario: "ESTUDIANTE",
+        comisionId: comisionIdFinal,
+        fecha: "2026-06-01",
+        horaRegistro: "18:00",
+        estado: "AUSENTE"
+      });
+
+      const response = await request(app)
+        .post("/api/asistencias/confirmar-dia")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          comisionId: comisionIdFinal,
+          aulaId: aulaIdFinal,
+          fecha: "2026-06-01",
+          asistencias: [
+            { dni: estudianteExistente.dni, estado: "PRESENTE" }, // Debe actualizar
+            { dni: estudianteNuevo.dni, estado: "AUSENTE" }       // Debe crear
+          ]
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.creados).toBe(1);
+      expect(response.body.actualizados).toBe(1);
+
+      // Verificar que el aula limpió sus tokens
+      const { Aula } = require("../../models");
+      const aulaActualizada = await Aula.findByPk(aulaIdFinal);
+      expect(aulaActualizada.rtoken).toBeNull();
+      expect(aulaActualizada.rtokenExpira).toBeNull();
+    });
+  });
+
+  // ============================================================
+  // GET /api/asistencias/dia
+  // ============================================================
+  describe("GET /api/asistencias/dia", () => {
+    test("debe retornar 400 si falta comisionId o fecha", async () => {
+      const response = await request(app)
+        .get("/api/asistencias/dia")
+        .set("Authorization", `Bearer ${token}`)
+        .query({ fecha: "2026-06-01" }); // Falta comisionId
+
+      expect(response.status).toBe(400);
+    });
+
+    test("debe retornar la lista de estudiantes con su estado de asistencia del día", async () => {
+      const comision = await crearComision();
+      const comisionIdFinal = comision.comisionId || comision.id;
+      
+      const estudianteConRegistro = await crearEstudiante();
+      const estudianteSinRegistro = await crearEstudiante();
+
+      await crearMatricula({ estudianteDni: estudianteConRegistro.dni, comisionId: comisionIdFinal });
+      await crearMatricula({ estudianteDni: estudianteSinRegistro.dni, comisionId: comisionIdFinal });
+
+      // Solo uno tiene registro de asistencia hoy
+      await Asistencia.create({
+        usuarioId: estudianteConRegistro.dni,
+        tipoUsuario: "ESTUDIANTE",
+        comisionId: comisionIdFinal,
+        fecha: "2026-06-01",
+        horaRegistro: "19:00",
+        estado: "PRESENTE"
+      });
+
+      const response = await request(app)
+        .get("/api/asistencias/dia")
+        .set("Authorization", `Bearer ${token}`)
+        .query({ comisionId: comisionIdFinal, fecha: "2026-06-01" });
+
+      expect(response.status).toBe(200);
+      expect(response.body.alumnos.length).toBe(2);
+      
+      const alumno1 = response.body.alumnos.find(a => a.dni === estudianteConRegistro.dni);
+      const alumno2 = response.body.alumnos.find(a => a.dni === estudianteSinRegistro.dni);
+
+      expect(alumno1.estado).toBe("PRESENTE");
+      expect(alumno1.escaneó).toBe(true);
+
+      // El que no tiene registro debe mapearse por defecto como AUSENTE
+      expect(alumno2.estado).toBe("AUSENTE");
+      expect(alumno2.escaneó).toBe(false);
+    });
+  });
 });

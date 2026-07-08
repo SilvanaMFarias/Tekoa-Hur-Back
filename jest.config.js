@@ -5,7 +5,7 @@ module.exports = {
   clearMocks: true, // limpia mocks entre tests
   forceExit: true, // forzar salida después de las pruebas
   collectCoverage: true, // Activa la cobertura automáticamente
-
+watchPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/coverage/"],
   // Carpeta que Ssi debe medir el total de líneas
   collectCoverageFrom: [
     "**/*.{js,jsx,ts,tsx}",
