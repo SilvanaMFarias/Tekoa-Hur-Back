@@ -131,7 +131,7 @@ describe("Pruebas E2E del Módulo de Historial de Importaciones", () => {
           archivo: buffer,
           usuarioId: adminId,
         });
-        
+
 
         const response = await request(app)
           .get(
@@ -156,7 +156,20 @@ describe("Pruebas E2E del Módulo de Historial de Importaciones", () => {
           'filename="comisiones_carga.xlsx"'
         );
 
-        expect(response.body).toEqual(buffer);
+        // Verificar que el archivo devuelto sea un Excel válido
+        const workbookDescargado = new ExcelJS.Workbook();
+        await workbookDescargado.xlsx.load(response.body);
+
+        const worksheet = workbookDescargado.getWorksheet("matriculacion");
+
+        expect(worksheet).toBeDefined();
+
+        // Se agregó la columna "Observación"
+        expect(worksheet.getCell("A1").value).toBe("Observación");
+
+        // Los datos originales siguen estando desplazados una columna
+        expect(worksheet.getCell("B1").value).toBe("DNI");
+        expect(worksheet.getCell("C1").value).toBe("Nombre");
 
       } catch (err) {
         console.error("===== ERROR TEST DESCARGAR ARCHIVO =====");
