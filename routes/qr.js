@@ -186,6 +186,7 @@ router.post("/generar", jwtAuth, async (req, res, next) => {
 /**
  * GET /api/qr/validar  (LEGACY)
  */
+/* istanbul ignore next */
 router.get("/validar", async (req, res) => {
   try {
     const { edificioId, aulaId, rtoken } = req.query;

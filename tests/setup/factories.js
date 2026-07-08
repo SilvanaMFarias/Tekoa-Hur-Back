@@ -10,7 +10,8 @@ const {
   Aula,
   Horario,
   Matricula,
-  Edificio 
+  Edificio,
+  HistorialImportacion 
 } = require("../../models");
 
 const uniko = () => Math.floor(Math.random() * 1000000);
@@ -187,15 +188,34 @@ async function crearMatricula(data = {}) {
   const comision = data.comisionId ? null : await crearComision();
 
   return Matricula.create({
-    studentDni: data.estudianteDni || estudiante.dni,
+    estudianteDni: data.estudianteDni || estudiante.dni,
     comisionId: data.comisionId || comision.comisionId,
+    ...data
+  });
+}
+
+async function crearHistorial(data = {}) {
+  // Aseguramos que usuarioId no sea undefined
+  if (!data.usuarioId) {
+    throw new Error("crearHistorial requiere un usuarioId para mantener la integridad referencial");
+  }
+
+  return HistorialImportacion.create({
+    origen: data.origen || "GENERAL",
+    nombreArchivo: data.nombreArchivo || "archivo_test.xlsx",
+    archivo: data.archivo || Buffer.from("test"),
+    usuarioId: data.usuarioId, // <--- Este es el valor clave
+    fechaEjecucion: data.fechaEjecucion || new Date(),
+    tipoOperacion: data.tipoOperacion || 'CARGA_INICIAL',
+    estado: data.estado || 'EXITOSA',
+    cantidadErrores: data.cantidadErrores ?? 0,
     ...data
   });
 }
 
 module.exports = {
   crearUsuario,
-  crearUsuarioConEmail, // <-- Exportado con éxito
+  crearUsuarioConEmail, 
   crearEdificio,
   crearMateria,
   crearProfesor,
@@ -205,5 +225,6 @@ module.exports = {
   crearAsistencia,
   crearAula,
   crearHorario,
-  crearMatricula
+  crearMatricula,
+  crearHistorial
 };
