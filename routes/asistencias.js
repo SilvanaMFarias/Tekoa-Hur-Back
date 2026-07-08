@@ -18,19 +18,111 @@ const {
     Estudiante, Comision, Profesor,
 } = require("../models");
 
-// ── GET /api/asistencias ─────────────────────────────────────
-router.get("/",    asyncHandler(asistenciaController.getAll));
-router.get("/:id", asyncHandler(asistenciaController.getById));
+// ── GET /api/asistencias/dia ─────────────────────────────────
+/**
+ * @swagger
+ * /api/asistencias/dia:
+ *   get:
+ *     summary: Alumnos de una comisión con su estado de asistencia en un día
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: comisionId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: query
+ *         name: fecha
+ *         required: true
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200: { description: Lista de alumnos con estado del día }
+ */
+router.get("/dia", async (req, res) => {
+    try {
+        const { comisionId, fecha } = req.query;
+        if (!comisionId || !fecha) {
+            return res.status(400).json({ message: "comisionId y fecha son requeridos" });
+        }
+        
+        const matriculas = await Matricula.findAll({
+            where: { comisionId },
+            include: [{ model: Estudiante, as: "estudiante" }],
+        });
+        
+        const registros = await Asistencia.findAll({
+            where: { comisionId, fecha, tipoUsuario: "ESTUDIANTE" },
+        });
+        
+        const estadoMap = {};
+        for (const r of registros) {
+            estadoMap[String(r.usuarioId)] = r.estado;
+        }
+        
+        const lista = matriculas.map(m => ({
+            dni:             m.estudianteDni,
+            nombre_apellido: m.estudiante?.nombre_apellido ?? m.estudianteDni,
+            estado:          estadoMap[m.estudianteDni] ?? "AUSENTE",
+            escaneó:         !!estadoMap[m.estudianteDni],
+        }));
+        
+        return res.json({ fecha, comisionId, alumnos: lista });
+        
+    } catch (err) {
+        console.error("Error /dia:", err);
+        return res.status(500).json({ message: "Error interno" });
+    }
+});
 
-// ── POST /api/asistencias ────────────────────────────────────
-router.post("/",
-            validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
-            validateAsistencia,
-            asistenciaController.create
-);
-
-router.put("/:id",    validateAsistencia, asistenciaController.update);
-router.delete("/:id", asyncHandler(asistenciaController.delete));
+// ── POST /api/asistencias/consolidar-ausentes ────────────────
+/**
+ * @swagger
+ * /api/asistencias/consolidar-ausentes:
+ *   post:
+ *     summary: Guarda ausentes para los alumnos sin registro en un día
+ *     tags: [Asistencias]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [comisionId, fecha]
+ *             properties:
+ *               comisionId: { type: string, format: uuid }
+ *               fecha:      { type: string, format: date }
+ *     responses:
+ *       200: { description: Ausentes consolidados }
+ */
+router.post("/consolidar-ausentes", async (req, res) => {
+    try {
+        const { comisionId, fecha } = req.body;
+        
+        if (!comisionId || !fecha) {
+            return res.status(400).json({
+                message: "Faltan campos: comisionId y fecha",
+            });
+        }
+        
+        const resultado = await ausenciasAutomaticasService.consolidarAusentes({
+            comisionId,
+            fecha,
+        });
+        
+        return res.json({
+            ok: true,
+            message: `Ausentes consolidados. ${resultado.creados} registros creados.`,
+            creados: resultado.creados,
+        });
+        
+    } catch (err) {
+        console.error("Error consolidar-ausentes:", err);
+        return res.status(500).json({ message: "Error interno del servidor" });
+    }
+});
 
 // ── POST /api/asistencias/registrar-desde-qr ─────────────────
 /**
@@ -246,111 +338,20 @@ router.post("/confirmar-dia", async (req, res) => {
     }
 });
 
-// ── POST /api/asistencias/consolidar-ausentes ────────────────
-/**
- * @swagger
- * /api/asistencias/consolidar-ausentes:
- *   post:
- *     summary: Guarda ausentes para los alumnos sin registro en un día
- *     tags: [Asistencias]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [comisionId, fecha]
- *             properties:
- *               comisionId: { type: string, format: uuid }
- *               fecha:      { type: string, format: date }
- *     responses:
- *       200: { description: Ausentes consolidados }
- */
-router.post("/consolidar-ausentes", async (req, res) => {
-    try {
-        const { comisionId, fecha } = req.body;
-        
-        if (!comisionId || !fecha) {
-            return res.status(400).json({
-                message: "Faltan campos: comisionId y fecha",
-            });
-        }
-        
-        const resultado = await ausenciasAutomaticasService.consolidarAusentes({
-            comisionId,
-            fecha,
-        });
-        
-        return res.json({
-            ok: true,
-            message: `Ausentes consolidados. ${resultado.creados} registros creados.`,
-            creados: resultado.creados,
-        });
-        
-    } catch (err) {
-        console.error("Error consolidar-ausentes:", err);
-        return res.status(500).json({ message: "Error interno del servidor" });
-    }
-});
 
-// ── GET /api/asistencias/dia ─────────────────────────────────
-/**
- * @swagger
- * /api/asistencias/dia:
- *   get:
- *     summary: Alumnos de una comisión con su estado de asistencia en un día
- *     tags: [Asistencias]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: comisionId
- *         required: true
- *         schema: { type: string }
- *       - in: query
- *         name: fecha
- *         required: true
- *         schema: { type: string, format: date }
- *     responses:
- *       200: { description: Lista de alumnos con estado del día }
- */
-router.get("/dia", async (req, res) => {
-    try {
-        const { comisionId, fecha } = req.query;
-        if (!comisionId || !fecha) {
-            return res.status(400).json({ message: "comisionId y fecha son requeridos" });
-        }
-        
-        const matriculas = await Matricula.findAll({
-            where: { comisionId },
-            include: [{ model: Estudiante, as: "estudiante" }],
-        });
-        
-        const registros = await Asistencia.findAll({
-            where: { comisionId, fecha, tipoUsuario: "ESTUDIANTE" },
-        });
-        
-        const estadoMap = {};
-        for (const r of registros) {
-            estadoMap[String(r.usuarioId)] = r.estado;
-        }
-        
-        const lista = matriculas.map(m => ({
-            dni:             m.estudianteDni,
-            nombre_apellido: m.estudiante?.nombre_apellido ?? m.estudianteDni,
-            estado:          estadoMap[m.estudianteDni] ?? "AUSENTE",
-            escaneó:         !!estadoMap[m.estudianteDni],
-        }));
-        
-        return res.json({ fecha, comisionId, alumnos: lista });
-        
-    } catch (err) {
-        console.error("Error /dia:", err);
-        return res.status(500).json({ message: "Error interno" });
-    }
-});
+// ── GET /api/asistencias ─────────────────────────────────────
+router.get("/",    asyncHandler(asistenciaController.getAll));
+router.get("/:id", asyncHandler(asistenciaController.getById));
+
+// ── POST /api/asistencias ────────────────────────────────────
+router.post("/",
+            validateRequiredFields(["fecha","horaRegistro","tipoUsuario","usuarioId","estado","comisionId","aulaId"]),
+            validateAsistencia,
+            asistenciaController.create
+);
+
+router.put("/:id",    validateAsistencia, asistenciaController.update);
+router.delete("/:id", asyncHandler(asistenciaController.delete));
 
 // ✅ module.exports al final — todos los endpoints ya están registrados
 module.exports = router;
