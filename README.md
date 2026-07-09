@@ -110,3 +110,7 @@ Para habilitar la verificación de que el escaneo se realice dentro de un radio 
 - `QR_GEOFENCE_METERS` : radio en metros (por defecto 50)
 
 Cuando `UNAHUR_LAT` y `UNAHUR_LON` estén definidas, el endpoint `POST /api/qr/asistencia/registrar` exigirá que el body incluya `lat` y `lon` (o `latitude`/`longitude` o `latitud`/`longitud`). Si la distancia del punto enviado al centro configurado excede `QR_GEOFENCE_METERS`, la solicitud será rechazada con 403 (GEOLOCATION_OUT_OF_RANGE).
+
+
+### Coverage del proyecto
+[![codecov](https://codecov.io/github/tekoa-hur/Tekoa-Hur-Back/graph/badge.svg?token=ZMLA0D5YDP)](https://codecov.io/github/tekoa-hur/Tekoa-Hur-Back)
