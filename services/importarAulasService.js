@@ -288,7 +288,7 @@ class ImportarAulasService {
       }
 
       // 3. Extraer atributos del Excel
-      //    ⭐ Si el parser detectó tipo en el nombre (ej "LAB", "AULA TALLER"),
+      //    Si el parser detectó tipo en el nombre (ej "LAB", "AULA TALLER"),
       //    lo pasamos para que tenga prioridad sobre lo que dice la columna
       //    "Descripción/ Tipo de Mobiliario".
       const atributos = this._extraerAtributos(datosExcel, tipoAulaDelNombre);
