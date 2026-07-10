@@ -1,7 +1,7 @@
 # 🌱 Tekoa-Hur-Back
 
 Sistema académico desarrollado como parte de la tesina en la **Universidad Nacional de Hurlingham (UNAHUR)**.  
-Incluye gestión de estudiantes, materias, profesores y asistencia, con documentación interactiva vía **Swagger**.
+Backend del **Sistema de gestión académica Tekoá-Hur**. Incluye gestión de estudiantes, materias, profesores, comisiones, matrículas, aulas, reservas de espacios, asistencia por QR e importación de planillas, con documentación interactiva vía **Swagger**.
 
 ---
 
