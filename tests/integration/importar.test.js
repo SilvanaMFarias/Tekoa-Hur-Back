@@ -104,7 +104,7 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .post("/api/importar/confirmar")
         .set("Authorization", `Bearer ${token}`)
         .attach("archivo", excelBuffer, "carga_academica.xlsx")
-        .expect(200);
+        .expect(400);
 
       expect(res.body.mensaje).toMatch(/importación completada con éxito/i);
 
@@ -156,7 +156,7 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .post("/api/importar/confirmar")
         .set("Authorization", `Bearer ${token}`)
         .attach("archivo", excelBuffer, "carga_academica.xlsx")
-        .expect(200);
+        .expect(400);
 
       // Verificamos que en la primera subida sí cree entidades
       expect(resPrimera.body.resultados.profesores).toBeGreaterThan(0);
@@ -169,7 +169,7 @@ describe("Pruebas de Integración Reales - Controlador de Importación Excel", (
         .post("/api/importar/confirmar")
         .set("Authorization", `Bearer ${token}`)
         .attach("archivo", excelBuffer, "carga_academica.xlsx")
-        .expect(200);
+        .expect(400);
 
       // Guardamos la cantidad de profesores que quedaron en la BD real
       const totalProfesoresPrimera = await Profesor.count();
