@@ -101,8 +101,8 @@ app.get("/login", (req, res) => {
 //const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
 let users = {};
 
-if (process.env.SWAGGER_USERS) {
-  users = JSON.parse(process.env.SWAGGER_USERS);
+if (process.env.SWAGGER_USERS_JSON) {
+  users = JSON.parse(process.env.SWAGGER_USERS_JSON);
 } else {
   users = JSON.parse(fs.readFileSync("users.json", "utf8"));
 }
