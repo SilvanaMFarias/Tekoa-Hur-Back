@@ -99,8 +99,6 @@ app.get("/login", (req, res) => {
 });
 //----Modifico para usar users.json en test-------------------
 //const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
-let users = [];
-
 let users = {};
 
 if (process.env.SWAGGER_USERS) {
