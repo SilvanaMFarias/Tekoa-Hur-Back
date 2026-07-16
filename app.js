@@ -1,37 +1,37 @@
 require("dotenv").config();
 
-const fs          = require("fs");
-const express     = require("express");
-const cors        = require("cors");
-const session     = require("express-session");
-const bodyParser  = require("body-parser");
+const fs = require("fs");
+const express = require("express");
+const cors = require("cors");
+const session = require("express-session");
+const bodyParser = require("body-parser");
 
 const { swaggerUi, swaggerSpec, swaggerUiOptions } = require("./swagger");
 
 const errorHandler = require("./middleware/errorHandlers");
-const notFound     = require("./middleware/notFound");
-const jwtAuth      = require("./middleware/jwtAuth");
-const requireRole  = require("./middleware/requireRole");
+const notFound = require("./middleware/notFound");
+const jwtAuth = require("./middleware/jwtAuth");
+const requireRole = require("./middleware/requireRole");
 
 // Routes
-const authRoutes        = require("./routes/auth");
-const importarRoutes    = require("./routes/importar");
-const aulasRoutes       = require("./routes/aulas");
-const comisionesRoutes  = require("./routes/comisiones");
-const edificiosRoutes   = require("./routes/edificios");
+const authRoutes = require("./routes/auth");
+const importarRoutes = require("./routes/importar");
+const aulasRoutes = require("./routes/aulas");
+const comisionesRoutes = require("./routes/comisiones");
+const edificiosRoutes = require("./routes/edificios");
 const estudiantesRoutes = require("./routes/estudiantes");
-const horariosRoutes    = require("./routes/horarios");
-const materiasRoutes    = require("./routes/materias");
-const matriculasRoutes  = require("./routes/matriculas");
-const profesoresRoutes  = require("./routes/profesores");
+const horariosRoutes = require("./routes/horarios");
+const materiasRoutes = require("./routes/materias");
+const matriculasRoutes = require("./routes/matriculas");
+const profesoresRoutes = require("./routes/profesores");
 const asistenciasRoutes = require("./routes/asistencias");
-const feriadosRoutes    = require("./routes/feriados");
+const feriadosRoutes = require("./routes/feriados");
 const tipoEventosRoutes = require("./routes/tipoEventos");
-const qrRoutes          = require("./routes/qr");
+const qrRoutes = require("./routes/qr");
 const diaSinClaseRoutes = require("./routes/diaSinClase");
-const guaraniRoutes     = require("./routes/guarani");
-const reporteRoutes     = require("./routes/reporte");
-const reservasRoutes    = require("./routes/reservas");
+const guaraniRoutes = require("./routes/guarani");
+const reporteRoutes = require("./routes/reporte");
+const reservasRoutes = require("./routes/reservas");
 const historialImportacionRoutes = require("./routes/historialImportacion");
 
 const app = express();
@@ -101,13 +101,10 @@ app.get("/login", (req, res) => {
 //const users = JSON.parse(fs.readFileSync("users.json", "utf8"));
 let users = [];
 
-if (process.env.NODE_ENV === "test") {
-  users = [
-    {
-      username: process.env.TEST_USER || "test",
-      password: process.env.TEST_PASSWORD || "1234",
-    },
-  ];
+let users = {};
+
+if (process.env.SWAGGER_USERS) {
+  users = JSON.parse(process.env.SWAGGER_USERS);
 } else {
   users = JSON.parse(fs.readFileSync("users.json", "utf8"));
 }
@@ -142,7 +139,7 @@ app.use("/api/tipoEventos", jwtAuth, tipoEventosRoutes);
 app.use("/api/asistencias", jwtAuth, asistenciasRoutes);
 app.use("/api/diaSinClase", jwtAuth, diaSinClaseRoutes);
 app.use("/api/guarani", jwtAuth, guaraniRoutes);
-app.use("/api/reportes",jwtAuth ,reporteRoutes);
+app.use("/api/reportes", jwtAuth, reporteRoutes);
 app.use("/api/reservas", jwtAuth, reservasRoutes);
 
 // ── Estudiantes ──────────────────────────────────────────────
