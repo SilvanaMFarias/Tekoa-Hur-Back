@@ -41,19 +41,6 @@ npx sequelize-cli db:create
 ```bash
 node sync.js
 ```
-
-## -Para correr los seeders instalar UUID
-```bash
-npm install uuid
-```
-
-### Ejecutar los seeders
-```bash
-npx sequelize-cli db:seed:all
-```
-
----
-
 ### Instalar swagger
 ```bash
 npm install swagger-jsdoc swagger-ui-express
